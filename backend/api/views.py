@@ -15,7 +15,8 @@ class APIRoot(views.APIView):
             'users': reverse('user-list', request=request),
             'messages': reverse('message-list', request=request),
             'register': reverse('register', request=request),
-            'login': reverse('login', request=request),
+            'obtain_token': reverse('token_obtain_pair', request=request),
+            'refresh_token': reverse('token_refresh', request=request),
         })
 
 

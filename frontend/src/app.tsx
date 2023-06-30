@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./routes/root";
 import ErrorPage from "./routes/error-page";
 import Login, { action as loginAction } from "./routes/login";
-import Register from "./routes/register";
+import Register, { action as registerAction } from "./routes/register";
 import AuthContext from "./contexts/auth-context";
 import { useContext } from "react";
 
@@ -21,6 +21,7 @@ const App: React.FC = () => {
         },
         {
           path: "register",
+          action: registerAction,
           element: <Register />,
         },
       ],

@@ -1,14 +1,11 @@
 import { Form, redirect, useActionData } from "react-router-dom";
 import type { AuthContextData } from "../contexts/auth-context";
 import type Action from "../interfaces/action";
+import { isString } from "../utils";
 
 interface LoginErrors {
   username?: string;
   password?: string;
-}
-
-function isString(object: unknown): object is string {
-  return typeof object === "string";
 }
 
 export const action =
@@ -22,17 +19,19 @@ export const action =
     const formData = await request.formData();
     const username = formData.get("username")?.valueOf();
     const password = formData.get("password")?.valueOf();
-    if (isString(username) && isString(password)) {
-      // todo: add username and password validation here and return LoginErrors if necessary
-      const loggedIn = await loginUser(username, password);
-      if (loggedIn) {
-        return redirect("/");
-      }
+    if (!isString(username)) {
+      return { username: "Invalid username" };
+    }
+    if (!isString(password)) {
+      return { password: "Invalid password" };
+    }
+    // todo: add username and password validation here and return LoginErrors if necessary
+    const loggedIn = await loginUser(username, password);
+    if (!loggedIn) {
+      return { password: "Wrong password" };
     }
 
-    return {
-      username: "Invalid credentials",
-    };
+    return redirect("/");
   };
 
 const Login: React.FC = () => {
@@ -42,12 +41,12 @@ const Login: React.FC = () => {
     <Form method="post" id="login-form">
       <label>
         <span>Username</span>
-        {errors?.username != null && <span>{errors.username}</span>}
+        {errors?.username !== undefined && <span>{errors.username}</span>}
         <input aria-label="Username" type="text" name="username" />
       </label>
       <label>
         <span>Password</span>
-        {errors?.password != null && <span>{errors.password}</span>}
+        {errors?.password !== undefined && <span>{errors.password}</span>}
         <input aria-label="Password" type="password" name="password" />
       </label>
       <button type="submit">Login</button>

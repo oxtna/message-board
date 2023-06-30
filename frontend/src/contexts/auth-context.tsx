@@ -28,10 +28,10 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
       body: JSON.stringify({ username, password }),
     });
     if (response.status === 200) {
-      const object = await response.json();
-      if (isTokens(object)) {
-        setTokens(object);
-        const decoded = jwt_decode<Token>(object.access);
+      const data = await response.json();
+      if (isTokens(data)) {
+        setTokens(data);
+        const decoded = jwt_decode<Token>(data.access);
         setUser({ id: decoded.user_id, username: decoded.username });
         return true;
       } else {
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
         );
       }
     } else {
-      console.log(response);
+      console.error(response);
       return false;
     }
   };

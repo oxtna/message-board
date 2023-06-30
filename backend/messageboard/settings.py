@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -94,12 +94,13 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
-#    'DEFAULT_RENDERER_CLASSES': (
-#        'rest_framework.renderers.JSONRenderer',
-#    )
+    #    'DEFAULT_RENDERER_CLASSES': (
+    #        'rest_framework.renderers.JSONRenderer',
+    #    )
 }
 
 SIMPLE_JWT = {
+    'TOKEN_OBTAIN_SERIALIZER': "api.serializers.CustomTokenObtainPairSerializer",
     'AUTH_HEADER_TYPES': ('Bearer',),
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),

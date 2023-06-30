@@ -8,10 +8,9 @@ export interface Token {
   exp: number;
   iat: number;
   jti: string;
+  user_id: number;
+  username: string;
 }
-
-export type AccessToken = Token & { user_id: number };
-export type RefreshToken = Token & { user_id: number };
 
 export function isTokens(object: unknown): object is TokenPair {
   return (

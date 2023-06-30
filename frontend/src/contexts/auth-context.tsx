@@ -1,6 +1,6 @@
 import { createContext, useState } from "react";
 import jwt_decode from "jwt-decode";
-import type { TokenPair, AccessToken } from "../interfaces/tokens";
+import type { TokenPair, Token } from "../interfaces/tokens";
 import { isTokens } from "../interfaces/tokens";
 import type User from "../interfaces/user";
 
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
+  // todo: load tokens from local storage on first load
   const [tokens, setTokens] = useState<TokenPair>();
   const [user, setUser] = useState<User | null>(null);
 
@@ -30,8 +31,8 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
       const object = await response.json();
       if (isTokens(object)) {
         setTokens(object);
-        const decoded = jwt_decode<AccessToken>(object.access);
-        setUser({ id: decoded.user_id });
+        const decoded = jwt_decode<Token>(object.access);
+        setUser({ id: decoded.user_id, username: decoded.username });
         return true;
       } else {
         throw new Error(

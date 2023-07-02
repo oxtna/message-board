@@ -18,10 +18,27 @@ interface Props {
   children: React.ReactNode;
 }
 
+const LOCAL_STORAGE_TOKENS_IDENTIFIER = "auth-tokens";
+
 export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
-  // todo: load tokens from local storage on first load
   const [tokens, setTokens] = useState<TokenPair | null>(null);
   const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedTokenString = localStorage.getItem(
+      LOCAL_STORAGE_TOKENS_IDENTIFIER
+    );
+    if (storedTokenString === null) {
+      return;
+    }
+    const storedTokens = JSON.parse(storedTokenString);
+    if (!isTokens(storedTokens)) {
+      return;
+    }
+    setTokens(storedTokens);
+    const decoded = jwt_decode<Token>(storedTokens.refresh);
+    setUser({ id: decoded.user_id, username: decoded.username });
+  }, []);
 
   const loginUser: LoginFunction = async (username, password) => {
     const response = await fetch("http://localhost:8000/api/token/", {
@@ -29,22 +46,21 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    if (response.status === 200) {
-      const data = await response.json();
-      if (isTokens(data)) {
-        setTokens(data);
-        const decoded = jwt_decode<Token>(data.access);
-        setUser({ id: decoded.user_id, username: decoded.username });
-        return true;
-      } else {
-        throw new Error(
-          "Something went very wrong! If you see this page, please contact our support team."
-        );
-      }
-    } else {
+    if (response.status !== 200) {
       console.error(response);
       return false;
     }
+    const data = await response.json();
+    if (!isTokens(data)) {
+      throw new Error(
+        "Something went very wrong! If you see this page, please contact our support team."
+      );
+    }
+    setTokens(data);
+    const decoded = jwt_decode<Token>(data.access);
+    setUser({ id: decoded.user_id, username: decoded.username });
+    localStorage.setItem(LOCAL_STORAGE_TOKENS_IDENTIFIER, JSON.stringify(data));
+    return true;
   };
 
   const refreshToken: RefreshFunction = async () => {

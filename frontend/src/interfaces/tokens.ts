@@ -18,3 +18,5 @@ export function isTokens(object: unknown): object is TokenPair {
     (object as TokenPair).refresh !== undefined
   );
 }
+
+export default TokenPair;

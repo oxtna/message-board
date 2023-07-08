@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useContext } from "react";
 import jwt_decode from "jwt-decode";
 import type { TokenPair, Token } from "../interfaces/tokens";
 import { isTokens } from "../interfaces/tokens";
@@ -19,6 +19,8 @@ interface Props {
 }
 
 const LOCAL_STORAGE_TOKENS_IDENTIFIER = "auth-tokens";
+
+const authContext = createContext<AuthContextData | null>(null);
 
 export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
   const [tokens, setTokens] = useState<TokenPair | null>(null);
@@ -88,14 +90,17 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
   };
 
   return (
-    <AuthContext.Provider
+    <authContext.Provider
       value={{ user, token: tokens?.access ?? null, loginUser, refreshToken }}
     >
       {children}
-    </AuthContext.Provider>
+    </authContext.Provider>
   );
 };
 
-const AuthContext = createContext<AuthContextData | null>(null);
+export const useUser = (): User | null => {
+  const user = useContext(authContext)?.user;
+  return user ?? null;
+};
 
-export default AuthContext;
+export default authContext;

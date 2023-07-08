@@ -1,6 +1,7 @@
 import { Form, redirect, useActionData } from "react-router-dom";
 import type Action from "../interfaces/action";
 import { isString, isEmail } from "../utils";
+
 interface RegisterErrors {
   username?: string;
   email?: string;

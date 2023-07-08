@@ -5,9 +5,9 @@ const Root: React.FC = () => {
   return (
     <>
       <Header />
-      <div>
+      <main>
         <Outlet />
-      </div>
+      </main>
     </>
   );
 };

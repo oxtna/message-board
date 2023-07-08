@@ -1,9 +1,8 @@
-import { useContext } from "react";
 import { Link } from "react-router-dom";
-import AuthContext from "../contexts/auth-context";
+import { useUser } from "../contexts/auth-context";
 
 const Header: React.FC = () => {
-  const username = useContext(AuthContext)?.user?.username;
+  const username = useUser()?.username;
 
   return (
     <div>

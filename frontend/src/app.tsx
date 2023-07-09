@@ -10,6 +10,7 @@ import authContext from "./contexts/auth-context";
 import Root from "./routes/root";
 import ErrorPage from "./routes/error-page";
 import Home from "./routes/home";
+import UserProfile from "./routes/user-profile";
 import Login, { actionFactory as loginActionFactory } from "./routes/login";
 import Register, { action as registerAction } from "./routes/register";
 
@@ -44,6 +45,10 @@ const App: React.FC = () => {
         {
           path: "home",
           element: <Home />,
+        },
+        {
+          path: "profile",
+          element: <UserProfile />,
         },
       ],
     },

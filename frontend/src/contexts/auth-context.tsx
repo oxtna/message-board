@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import jwt_decode from "jwt-decode";
 import axios from "axios";
-import type { TokenPair, Token } from "../interfaces/tokens";
-import { isTokens } from "../interfaces/tokens";
+import { isTokens, type TokenPair, type Token } from "../interfaces/tokens";
 import type User from "../interfaces/user";
 import type ChildrenProps from "../interfaces/children-props";
 

@@ -1,21 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import axios, { type AxiosError } from "axios";
+import useUser from "../hooks/use-user";
 import type Message from "../interfaces/message";
-import type User from "../interfaces/user";
 
 const Post: React.FC<Message> = ({ text, owner: ownerUrl }: Message) => {
-  const {
-    isLoading,
-    isError,
-    error,
-    data: owner,
-  } = useQuery<User, AxiosError>({
-    queryKey: ["users", ownerUrl],
-    queryFn: async () => {
-      const response = await axios.get(ownerUrl);
-      return response.data;
-    },
-  });
+  const { isLoading, isError, error, data: owner } = useUser(ownerUrl);
 
   if (isLoading) {
     return <span>Loading...</span>;

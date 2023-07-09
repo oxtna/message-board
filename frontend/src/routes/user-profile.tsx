@@ -1,7 +1,10 @@
+import { useContext } from "react";
 import useMessages from "../hooks/use-messages";
 import Post from "../components/post";
+import authContext from "../contexts/auth-context";
 
-const Home: React.FC = () => {
+const UserProfile: React.FC = () => {
+  const username = useContext(authContext)?.user?.username;
   const { isLoading, isError, error, data } = useMessages();
 
   if (isLoading) {
@@ -20,7 +23,12 @@ const Home: React.FC = () => {
     />
   ));
 
-  return <div>{posts}</div>;
+  return (
+    <div>
+      <span>{username ?? "Profile"}</span>
+      <div>{posts}</div>
+    </div>
+  );
 };
 
-export default Home;
+export default UserProfile;

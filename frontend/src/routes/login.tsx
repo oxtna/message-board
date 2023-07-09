@@ -1,5 +1,5 @@
 import { Form, redirect, useActionData } from "react-router-dom";
-import type { AuthContextData } from "../contexts/auth-context";
+import { type AuthContextData } from "../contexts/auth-context";
 import type Action from "../interfaces/action";
 import { isString } from "../utils";
 

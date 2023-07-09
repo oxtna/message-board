@@ -6,14 +6,14 @@ const Header: React.FC = () => {
 
   return (
     <div>
-      <Link to={"/"}>Home</Link>
+      <Link to="/home">Home</Link>
       {username === undefined && (
         <>
-          <Link to={"login"}>Login</Link>
-          <Link to={"register"}>Register</Link>
+          <Link to="/login">Login</Link>
+          <Link to="/register">Register</Link>
         </>
       )}
-      {username !== undefined && <span> | {username}</span>}
+      {username !== undefined && <Link to="/profile">{username}</Link>}
     </div>
   );
 };

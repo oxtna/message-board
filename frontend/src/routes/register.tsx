@@ -1,4 +1,5 @@
 import { Form, redirect, useActionData } from "react-router-dom";
+import axios from "axios";
 import type Action from "../interfaces/action";
 import { isString, isEmail } from "../utils";
 
@@ -37,22 +38,27 @@ export const action: Action = async ({ request }) => {
     return { passwordRepeat: "Passwords do not match" };
   }
 
-  const response = await fetch("http://localhost:8000/api/register/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const response = await axios.post<RegisterAPIResponse>(
+    "http://localhost:8000/api/register/",
+    {
       username,
       email,
       password,
       password_repeat: passwordRepeat,
-    }),
-  });
+    }
+  );
+
   if (response.status === 400) {
-    const data: RegisterAPIResponse = await response.json();
+    const data: RegisterAPIResponse = response.data;
     const errors = Object.fromEntries(
       Object.entries(data).map(([key, value]) => [key, value[0]])
     );
     return errors;
+  }
+  if (response.status !== 201) {
+    throw new Error(
+      "Something went very wrong! If you see this page, please contact our support team."
+    );
   }
 
   return redirect("/login");

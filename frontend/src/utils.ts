@@ -8,15 +8,3 @@ export function isEmail(text: string): boolean {
     text
   );
 }
-
-export async function fetchData<Type>(url: URL): Promise<Type> {
-  const response = await fetch(url, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (response.status !== 200) {
-    throw new Error("Cannot fetch the specified data");
-  }
-  const data: Type = await response.json();
-  return data;
-}

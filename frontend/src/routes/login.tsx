@@ -8,7 +8,7 @@ interface LoginErrors {
   password?: string;
 }
 
-export const action =
+export const actionFactory =
   (authContext: AuthContextData | null): Action =>
   async ({ request }) => {
     const loginUser = authContext?.loginUser;

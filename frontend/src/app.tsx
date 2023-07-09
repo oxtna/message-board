@@ -1,18 +1,29 @@
+import { useContext } from "react";
 import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
 } from "react-router-dom";
+import { ChakraProvider } from "@chakra-ui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import authContext from "./contexts/auth-context";
 import Root from "./routes/root";
 import ErrorPage from "./routes/error-page";
 import Home from "./routes/home";
-import Login, { action as loginAction } from "./routes/login";
+import Login, { actionFactory as loginActionFactory } from "./routes/login";
 import Register, { action as registerAction } from "./routes/register";
-import authContext from "./contexts/auth-context";
-import { useContext } from "react";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+    },
+  },
+});
 
 const App: React.FC = () => {
   const auth = useContext(authContext);
+
   const router = createBrowserRouter([
     {
       path: "/",
@@ -22,7 +33,7 @@ const App: React.FC = () => {
         { index: true, element: <Navigate to="/home" /> },
         {
           path: "login",
-          action: loginAction(auth),
+          action: loginActionFactory(auth),
           element: <Login />,
         },
         {
@@ -38,7 +49,13 @@ const App: React.FC = () => {
     },
   ]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <ChakraProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </ChakraProvider>
+  );
 };
 
 export default App;

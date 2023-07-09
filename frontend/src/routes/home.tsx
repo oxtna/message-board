@@ -1,25 +1,34 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios, { type AxiosError } from "axios";
 import Post from "../components/post";
 import type Message from "../interfaces/message";
-import { fetchData } from "../utils";
+
+interface APIResponse {
+  count: number;
+  next: string;
+  previous: string;
+  results: Message[];
+}
 
 const Home: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { isLoading, isError, error, data } = useQuery<APIResponse, AxiosError>(
+    {
+      queryKey: ["messages"],
+      queryFn: async () => {
+        const response = await axios.get("http://localhost:8000/api/messages/");
+        return response.data;
+      },
+    }
+  );
 
-  useEffect(() => {
-    fetchData<{
-      count: number;
-      next: string;
-      previous: string;
-      results: Message[];
-    }>(new URL("http://localhost:8000/api/messages/"))
-      .then((fetchedMessages) => {
-        setMessages(fetchedMessages.results);
-      })
-      .catch(console.error);
-  }, []);
+  if (isLoading) {
+    return <span>Loading...</span>;
+  }
+  if (isError) {
+    throw error;
+  }
 
-  const posts = messages.map((message) => (
+  const posts = data?.results.map((message) => (
     <Post
       key={message.id}
       id={message.id}

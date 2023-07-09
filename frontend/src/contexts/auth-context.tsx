@@ -1,8 +1,10 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import jwt_decode from "jwt-decode";
+import axios from "axios";
 import type { TokenPair, Token } from "../interfaces/tokens";
 import { isTokens } from "../interfaces/tokens";
 import type User from "../interfaces/user";
+import type ChildrenProps from "../interfaces/children-props";
 
 type LoginFunction = (username: string, password: string) => Promise<boolean>;
 type RefreshFunction = () => Promise<boolean>;
@@ -14,15 +16,13 @@ export interface AuthContextData {
   refreshToken: RefreshFunction;
 }
 
-interface Props {
-  children: React.ReactNode;
-}
-
 const LOCAL_STORAGE_TOKENS_IDENTIFIER = "auth-tokens";
 
 const authContext = createContext<AuthContextData | null>(null);
 
-export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
+export const AuthProvider: React.FC<ChildrenProps> = ({
+  children,
+}: ChildrenProps) => {
   const [tokens, setTokens] = useState<TokenPair | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
@@ -43,25 +43,29 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
   }, []);
 
   const loginUser: LoginFunction = async (username, password) => {
-    const response = await fetch("http://localhost:8000/api/token/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    const response = await axios.post<TokenPair>(
+      "http://localhost:8000/api/token/",
+      {
+        username,
+        password,
+      }
+    );
     if (response.status !== 200) {
       console.error(response);
       return false;
     }
-    const data = await response.json();
-    if (!isTokens(data)) {
+    if (!isTokens(response.data)) {
       throw new Error(
         "Something went very wrong! If you see this page, please contact our support team."
       );
     }
-    setTokens(data);
-    const decoded = jwt_decode<Token>(data.access);
+    setTokens(response.data);
+    const decoded = jwt_decode<Token>(response.data.access);
     setUser({ id: decoded.user_id, username: decoded.username });
-    localStorage.setItem(LOCAL_STORAGE_TOKENS_IDENTIFIER, JSON.stringify(data));
+    localStorage.setItem(
+      LOCAL_STORAGE_TOKENS_IDENTIFIER,
+      JSON.stringify(response.data)
+    );
     return true;
   };
 
@@ -69,23 +73,21 @@ export const AuthProvider: React.FC<Props> = ({ children }: Props) => {
     if (tokens === null) {
       return false;
     }
-    const response = await fetch("http://localhost:8000/api/token/refresh/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh: tokens.refresh }),
-    });
+    const response = await axios.post<TokenPair>(
+      "http://localhost:8000/api/token/refresh/",
+      { refresh: tokens.refresh }
+    );
     if (response.status === 401) {
       setUser(null);
       setTokens(null);
       return false;
     }
-    const data = await response.json();
-    if (response.status !== 200 || !isTokens(data)) {
+    if (response.status !== 200 || !isTokens(response.data)) {
       throw new Error(
         "Something went very wrong! If you see this page, please contact our support team."
       );
     }
-    setTokens(data);
+    setTokens(response.data);
     return true;
   };
 

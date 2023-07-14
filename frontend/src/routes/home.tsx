@@ -1,3 +1,4 @@
+import { Flex } from "@chakra-ui/react";
 import useMessages from "../hooks/use-messages";
 import Post from "../components/post";
 
@@ -20,7 +21,11 @@ const Home: React.FC = () => {
     />
   ));
 
-  return <div>{posts}</div>;
+  return (
+    <Flex direction="column" gap={4}>
+      {posts}
+    </Flex>
+  );
 };
 
 export default Home;

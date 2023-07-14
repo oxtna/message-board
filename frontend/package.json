@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-ui/icons": "^2.0.19",
     "@chakra-ui/react": "^2.7.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@fontsource/league-spartan": "^5.0.5",
     "@tanstack/react-query": "^4.29.19",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.4.0",

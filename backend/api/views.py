@@ -44,8 +44,14 @@ class UserDetail(generics.RetrieveAPIView):
 
 class MessageList(generics.ListCreateAPIView):
     serializer_class = MessageSerializer
-    queryset = Message.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Message.objects.all()
+        username = self.request.query_params.get('user')
+        if username is not None:
+            queryset = queryset.filter(owner__username=username)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

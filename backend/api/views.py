@@ -49,8 +49,18 @@ class MessageList(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = Message.objects.all()
         username = self.request.query_params.get('user')
+        parent = self.request.query_params.get('parent')
+        posts = self.request.query_params.get('posts')
         if username is not None:
             queryset = queryset.filter(owner__username=username)
+        if parent is not None:
+            queryset = queryset.filter(parent__id=parent)
+        if posts is not None:
+            posts = posts.lower()
+            if posts == "true":
+                queryset = queryset.filter(parent=None)
+            elif posts == "false":
+                queryset = queryset.exclude(parent=None)
         return queryset
 
     def perform_create(self, serializer):

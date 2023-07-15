@@ -32,6 +32,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
+    class Meta:
+        ordering = ['id']
+
     def clean(self):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
@@ -50,3 +53,6 @@ class Message(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
+
+    class Meta:
+        ordering = ['-created']

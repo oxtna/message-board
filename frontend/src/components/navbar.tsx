@@ -16,7 +16,8 @@ const StyledLink: React.FC<StyledLinkProps> = ({
     to={to}
     p={3}
     color="white"
-    _hover={{ color: "teal.400", backgroundColor: "gray.800" }}
+    _hover={{ color: "teal.400", bgColor: "gray.800" }}
+    _focus={{ color: "teal.400" }}
   >
     {children}
   </Link>
@@ -46,7 +47,7 @@ const Navbar: React.FC = () => {
       position="sticky"
       top={0}
       zIndex={1}
-      backgroundColor="blackAlpha.300"
+      bgColor="blackAlpha.300"
       backdropFilter="auto"
       backdropBlur="12px"
       display={{ base: "none", md: "initial" }}
@@ -61,6 +62,7 @@ const Navbar: React.FC = () => {
       >
         <ChatIcon
           boxSize={5}
+          mx={3}
           color="white"
           _hover={{ color: "teal.100" }}
           transition="color 400ms ease-in-out"

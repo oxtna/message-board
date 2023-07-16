@@ -33,19 +33,21 @@ class RegistrationSerializer(serializers.ModelSerializer):
                                         password=validated_data['password'])
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.HyperlinkedModelSerializer):
     messages = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='message-detail')
+    favorites = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='message-detail')
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'messages']
+        fields = ['url', 'username', 'messages', 'favorites']
 
 
-class MessageSerializer(serializers.ModelSerializer):
+class MessageSerializer(serializers.HyperlinkedModelSerializer):
     children = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='message-detail')
     parent = serializers.HyperlinkedRelatedField(queryset=Message.objects.all(), view_name='message-detail')
     owner = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
+    favorite_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Message
-        fields = ['id', 'text', 'created', 'owner', 'parent', 'children']
+        fields = ['url', 'text', 'created', 'owner', 'parent', 'children', 'favorite_count']

@@ -51,8 +51,6 @@ class Message(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
                                related_name='children')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    favorited_by = models.ManyToManyField(User, related_name="favorites")
     created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
-
-    class Meta:
-        ordering = ['-created']

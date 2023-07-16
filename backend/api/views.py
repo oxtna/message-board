@@ -59,9 +59,9 @@ class MessageList(generics.ListCreateAPIView):
             queryset = queryset.filter(parent__id=parent)
         if posts is not None:
             posts = posts.lower()
-            if posts == "true":
+            if posts == 'true':
                 queryset = queryset.filter(parent=None)
-            elif posts == "false":
+            elif posts == 'false':
                 queryset = queryset.exclude(parent=None)
         return queryset
 
@@ -71,5 +71,9 @@ class MessageList(generics.ListCreateAPIView):
 
 class MessageDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = MessageSerializer
-    queryset = Message.objects.all().annotate(favorite_count=Count('favorited_by'))
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Message.objects.all().order_by('-created')
+        queryset = queryset.annotate(favorite_count=Count('favorited_by'))
+        return queryset

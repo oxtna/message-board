@@ -14,7 +14,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=True, )
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_repeat = serializers.CharField(write_only=True, required=True)
 
@@ -34,12 +34,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
-    messages = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='message-detail')
-    favorites = serializers.HyperlinkedRelatedField(many=True, read_only=True, view_name='message-detail')
-
     class Meta:
         model = User
         fields = ['url', 'username', 'messages', 'favorites']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        ordered_messages = instance.messages.order_by('-created')
+        ordered_messages = MessageSerializer(ordered_messages, many=True, context=self.context).data
+        representation['messages'] = [message['url'] for message in ordered_messages]
+        ordered_favorites = instance.favorites.order_by('-created')
+        ordered_favorites = MessageSerializer(ordered_favorites, many=True, context=self.context).data
+        representation['favorites'] = [favorite['url'] for favorite in ordered_favorites]
+        return representation
 
 
 class MessageSerializer(serializers.HyperlinkedModelSerializer):

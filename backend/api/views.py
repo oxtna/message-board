@@ -1,17 +1,18 @@
 from django.db.models import Count
-from rest_framework import views, status, generics
+from rest_framework import views, viewsets, status, generics
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from .models import Message, User
+from .models import Message, User, Favorite
 from .permissions import IsOwnerOrReadOnly
 from .serializers import MessageSerializer, UserSerializer, RegistrationSerializer
 
 
 class APIRoot(views.APIView):
     @staticmethod
-    def get(request):
+    def get(request) -> Response:
         return Response({
             'users': reverse('user-list', request=request),
             'messages': reverse('message-list', request=request),
@@ -69,7 +70,7 @@ class MessageList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class MessageDetail(generics.RetrieveUpdateDestroyAPIView):
+class MessageDetail(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
@@ -77,3 +78,13 @@ class MessageDetail(generics.RetrieveUpdateDestroyAPIView):
         queryset = Message.objects.all().order_by('-created')
         queryset = queryset.annotate(favorite_count=Count('favorited_by'))
         return queryset
+
+    @action(detail=True, methods=['post'], name='favorite')
+    def favorite(self, request, *args, **kwargs) -> Response:
+        Favorite.objects.get_or_create(user=request.user, message=self.get_object())
+        return Response(status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], name='unfavorite')
+    def unfavorite(self, request, *args, **kwargs) -> Response:
+        Favorite.objects.filter(user=request.user, message=self.get_object()).delete()
+        return Response(status=status.HTTP_200_OK)

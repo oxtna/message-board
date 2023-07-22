@@ -48,9 +48,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Message(models.Model):
     text = models.CharField(max_length=250)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
-                               related_name='children')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
-    favorited_by = models.ManyToManyField(User, related_name='favorites')
+    favorited_by = models.ManyToManyField(User, through='Favorite', related_name='favorites')
+    created = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.ForeignKey(Message, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()

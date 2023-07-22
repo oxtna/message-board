@@ -5,7 +5,7 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from .models import Message, User
+from .models import Message, User, Favorite
 
 
 class UserChangeForm(forms.ModelForm):
@@ -63,9 +63,14 @@ class UserAdmin(BaseUserAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('text', 'created')
+    list_display = ('text', 'created', 'owner', 'parent')
+
+
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'message', 'created')
 
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Message, MessageAdmin)
+admin.site.register(Favorite, FavoriteAdmin)
 admin.site.unregister(Group)

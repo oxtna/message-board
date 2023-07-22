@@ -1,5 +1,4 @@
 import { Button, HStack } from "@chakra-ui/react";
-import type React from "react";
 import { forwardRef } from "react";
 
 type PostActionProps = {

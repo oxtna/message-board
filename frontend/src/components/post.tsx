@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { ChatIcon, CloseIcon, StarIcon } from "@chakra-ui/icons";
 import { Link as RouterLink } from "react-router-dom";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, forwardRef } from "react";
 import type Message from "../interfaces/message";
 import useUser from "../hooks/use-user";
 import useMessages from "../hooks/use-messages";
@@ -24,7 +24,7 @@ export type PostProps = {
   message: Message;
 };
 
-const Post: React.FC<PostProps> = ({ message }: PostProps) => {
+const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
   const {
     isLoading: isUserLoading,
     isError: isUserError,
@@ -71,7 +71,7 @@ const Post: React.FC<PostProps> = ({ message }: PostProps) => {
 
   // todo: add time of posting to the card header
   return (
-    <Card bgColor="gray.800" color="white">
+    <Card ref={ref} as="div" bgColor="gray.800" color="white">
       <CardHeader px={8}>
         <Heading fontWeight={400} fontSize="lg" color="gray.500">
           <Link
@@ -123,6 +123,8 @@ const Post: React.FC<PostProps> = ({ message }: PostProps) => {
       </CardFooter>
     </Card>
   );
-};
+});
+
+Post.displayName = "Post";
 
 export default Post;

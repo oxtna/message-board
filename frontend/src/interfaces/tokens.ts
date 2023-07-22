@@ -1,16 +1,18 @@
-export interface TokenPair {
-  refresh: string;
-  access: string;
-}
+export type TokenType = "access" | "refresh";
 
-export interface Token {
-  token_type: "access" | "refresh";
-  exp: number;
-  iat: number;
-  jti: string;
-  user_id: number;
-  username: string;
-}
+export type TokenPair = {
+  readonly access: string;
+  readonly refresh: string;
+};
+
+export type Token = {
+  readonly token_type: TokenType;
+  readonly exp: number;
+  readonly iat: number;
+  readonly jti: string;
+  readonly user_id: number;
+  readonly username: string;
+};
 
 export function isTokens(object: unknown): object is TokenPair {
   return (

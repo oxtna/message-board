@@ -3,18 +3,18 @@ import axios from "axios";
 import type Action from "../interfaces/action";
 import { isString, isEmail } from "../utils";
 
-interface RegisterErrors {
+type RegisterErrors = {
   username?: string;
   email?: string;
   password?: string;
   passwordRepeat?: string;
-}
+};
 
-interface RegisterAPIResponse {
+type RegisterAPIResponse = {
   username?: string[];
   email?: string[];
   password?: string[];
-}
+};
 
 export const action: Action = async ({ request }) => {
   const formData = await request.formData();

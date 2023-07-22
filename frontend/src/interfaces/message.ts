@@ -1,9 +1,11 @@
-export interface Message {
-  id: number;
+export type Message = {
+  url: string;
+  created: Date;
   text: string;
   owner: string;
-  // parent: string;
-  // children: string[];  // todo: rename this in front and backend so that it doesn't conflict with React
-}
+  parent?: string | null;
+  children?: string[];
+  favorite_count?: number;
+};
 
 export default Message;

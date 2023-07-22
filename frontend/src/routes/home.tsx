@@ -1,24 +1,20 @@
 import { Flex } from "@chakra-ui/react";
-import useMessages from "../hooks/use-messages";
+import usePagedMessages from "../hooks/use-paged-messages";
 import Post from "../components/post";
 
 const Home: React.FC = () => {
-  const { isLoading, isError, error, data } = useMessages();
+  const { isLoading, isError, error, data } = usePagedMessages();
+  // todo: after scrolling down enough get next page of messages
 
   if (isLoading) {
-    return <span>Loading...</span>;
+    return <div>Loading...</div>;
   }
   if (isError) {
     throw error;
   }
 
-  const posts = data.results.map((message) => (
-    <Post
-      key={message.id}
-      id={message.id}
-      text={message.text}
-      owner={message.owner}
-    />
+  const posts = data.messages.map((message) => (
+    <Post key={message.url} message={message} />
   ));
 
   return (

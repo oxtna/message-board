@@ -3,10 +3,10 @@ import { type AuthContextData } from "../contexts/auth-context";
 import type Action from "../interfaces/action";
 import { isString } from "../utils";
 
-interface LoginErrors {
+type LoginErrors = {
   username?: string;
   password?: string;
-}
+};
 
 export const actionFactory =
   (authContext: AuthContextData | null): Action =>

@@ -3,25 +3,28 @@ import jwt_decode from "jwt-decode";
 import axios from "axios";
 import { isTokens, type TokenPair, type Token } from "../interfaces/tokens";
 import type User from "../interfaces/user";
-import type ChildrenProps from "../interfaces/children-props";
 
 type LoginFunction = (username: string, password: string) => Promise<boolean>;
 type RefreshFunction = () => Promise<boolean>;
 
-export interface AuthContextData {
+export type AuthContextData = {
   user: User | null;
   token: string | null;
   loginUser: LoginFunction;
   refreshToken: RefreshFunction;
-}
+};
 
 const LOCAL_STORAGE_TOKENS_IDENTIFIER = "auth-tokens";
 
 const authContext = createContext<AuthContextData | null>(null);
 
-export const AuthProvider: React.FC<ChildrenProps> = ({
+type AuthProviderProps = {
+  children?: React.ReactNode;
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
-}: ChildrenProps) => {
+}: AuthProviderProps) => {
   const [tokens, setTokens] = useState<TokenPair | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
@@ -38,7 +41,10 @@ export const AuthProvider: React.FC<ChildrenProps> = ({
     }
     setTokens(storedTokens);
     const decoded = jwt_decode<Token>(storedTokens.refresh);
-    setUser({ id: decoded.user_id, username: decoded.username });
+    setUser({
+      url: `http://localhost:8000/api/users/${decoded.user_id}/`,
+      username: decoded.username,
+    });
   }, []);
 
   const loginUser: LoginFunction = async (username, password) => {
@@ -60,7 +66,10 @@ export const AuthProvider: React.FC<ChildrenProps> = ({
     }
     setTokens(response.data);
     const decoded = jwt_decode<Token>(response.data.access);
-    setUser({ id: decoded.user_id, username: decoded.username });
+    setUser({
+      url: `http://localhost:8000/api/users/${decoded.user_id}/`,
+      username: decoded.username,
+    });
     localStorage.setItem(
       LOCAL_STORAGE_TOKENS_IDENTIFIER,
       JSON.stringify(response.data)
@@ -99,7 +108,7 @@ export const AuthProvider: React.FC<ChildrenProps> = ({
   );
 };
 
-export const useUser = (): User | null => {
+export const useAuthUser = (): User | null => {
   const user = useContext(authContext)?.user;
   return user ?? null;
 };

@@ -60,3 +60,6 @@ class Favorite(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'message'], name='favorite_once')]

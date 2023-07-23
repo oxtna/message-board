@@ -55,10 +55,11 @@ class MessageSerializer(serializers.HyperlinkedModelSerializer):
     parent = serializers.HyperlinkedRelatedField(queryset=Message.objects.all(), view_name='message-detail')
     owner = serializers.HyperlinkedRelatedField(read_only=True, view_name='user-detail')
     favorite_count = serializers.IntegerField(read_only=True)
+    favorited = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Message
-        fields = ['url', 'text', 'created', 'owner', 'parent', 'children', 'favorite_count']
+        fields = ['url', 'text', 'created', 'owner', 'parent', 'children', 'favorite_count', 'favorited']
 
 
 class FavoriteSerializer(serializers.HyperlinkedModelSerializer):

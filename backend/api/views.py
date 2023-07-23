@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from rest_framework import views, viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -50,7 +50,9 @@ class MessageList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Message.objects.all().order_by('-created')
-        queryset = queryset.annotate(favorite_count=Count('favorited_by'))
+        queryset = queryset.annotate(favorite_count=Count('favorited_by')).annotate(favorited=Exists(
+            Favorite.objects.filter(user=self.request.user.id, message=OuterRef('pk'))
+        ))
         username = self.request.query_params.get('user')
         parent = self.request.query_params.get('parent')
         posts = self.request.query_params.get('posts')
@@ -76,7 +78,9 @@ class MessageDetail(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Message.objects.all().order_by('-created')
-        queryset = queryset.annotate(favorite_count=Count('favorited_by'))
+        queryset = queryset.annotate(favorite_count=Count('favorited_by')).annotate(favorited=Exists(
+            Favorite.objects.filter(user=self.request.user.id, message=OuterRef('pk'))
+        ))
         return queryset
 
     @action(detail=True, methods=['post'], name='favorite')

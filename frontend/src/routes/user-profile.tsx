@@ -1,26 +1,21 @@
 import { useContext } from "react";
-import useMessages from "../hooks/use-messages";
-import Post from "../components/post";
 import authContext from "../contexts/auth-context";
+import usePagedMessages from "../hooks/use-paged-messages";
+import Post from "../components/post";
 
 const UserProfile: React.FC = () => {
-  const username = useContext(authContext)?.user?.username;
-  const { isLoading, isError, error, data } = useMessages();
+  const username = useContext(authContext).user?.username;
+  const { isLoading, isError, error, data } = usePagedMessages();
 
   if (isLoading) {
-    return <span>Loading...</span>;
+    return <div>Loading...</div>;
   }
   if (isError) {
     throw error;
   }
 
-  const posts = data.results.map((message) => (
-    <Post
-      key={message.id}
-      id={message.id}
-      text={message.text}
-      owner={message.owner}
-    />
+  const posts = data.messages.map((message) => (
+    <Post key={message.url} message={message} />
   ));
 
   return (

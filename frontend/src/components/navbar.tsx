@@ -1,32 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
-import { Stack, Link, Spacer, Box } from "@chakra-ui/react";
-import { useUser } from "../contexts/auth-context";
+import { Stack, Spacer, Box } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
-import type ChildrenProps from "../interfaces/children-props";
-
-type StyledLinkProps = ChildrenProps & { to: string };
-
-const StyledLink: React.FC<StyledLinkProps> = ({
-  to,
-  children,
-}: StyledLinkProps) => (
-  <Link
-    as={RouterLink}
-    to={to}
-    p={3}
-    color="white"
-    _hover={{ color: "teal.400", bgColor: "gray.800" }}
-    _focus={{ color: "teal.400" }}
-  >
-    {children}
-  </Link>
-);
+import { useAuthUser } from "../contexts/auth-context";
+import NavbarLink from "./navbar-link";
 
 const Navbar: React.FC = () => {
   const [borderOpacity, setBorderOpacity] = useState<number>(0);
 
-  const username = useUser()?.username;
+  const username = useAuthUser()?.username;
 
   useEffect(() => {
     const handleScroll = (): void => {
@@ -68,15 +49,15 @@ const Navbar: React.FC = () => {
           transition="color 400ms ease-in-out"
         />
         <Spacer />
-        <StyledLink to="/home">Home</StyledLink>
+        <NavbarLink to="/home">Home</NavbarLink>
         {username === undefined && (
           <>
-            <StyledLink to="/login">Login</StyledLink>
-            <StyledLink to="/register">Register</StyledLink>
+            <NavbarLink to="/login">Login</NavbarLink>
+            <NavbarLink to="/register">Register</NavbarLink>
           </>
         )}
         {username !== undefined && (
-          <StyledLink to="/profile">{username}</StyledLink>
+          <NavbarLink to="/profile">{username}</NavbarLink>
         )}
       </Stack>
       <Box

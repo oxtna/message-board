@@ -29,7 +29,7 @@ export const actionFactory =
     if (!isString(password)) {
       return { password: "Invalid password" };
     }
-    // todo: add username and password validation here and return LoginErrors if necessary
+
     const loggedIn = await loginUser(username, password);
     if (!loggedIn) {
       return { password: "Wrong password" };

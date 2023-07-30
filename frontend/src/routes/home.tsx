@@ -23,8 +23,6 @@ export const loaderFactory =
     });
   };
 
-// todo: rewrite the whole structure of code so that it works with react-router-dom and add access token refreshing and make a nice UI for login and register
-//       and add favourite button to comments and add comments of comments and make more hooks for fetching specific data from the api
 export const actionFactory = (
   queryClient: QueryClient,
   authContext: AuthContextData
@@ -56,7 +54,6 @@ export const actionFactory = (
 };
 
 const Home: React.FC = () => {
-  // todo: fix axios get exceptions for getting 404 when page index is out of bounds (backend issue)
   const { token } = useContext<AuthContextData>(authContext);
 
   const initialData = useLoaderData() as Awaited<

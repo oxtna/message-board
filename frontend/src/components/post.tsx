@@ -40,7 +40,6 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
   }
 
   const ownerID = +message.owner.slice(0, -1).split("/").slice(-1);
-  // todo: make the backend return a JSON object like { id: number, username: string, url: string } instead of url for the owner
   const {
     isLoading: isUserLoading,
     isError: isUserError,

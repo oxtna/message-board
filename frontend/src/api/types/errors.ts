@@ -1,4 +1,3 @@
-// todo: fix this in the API
 export type CreateMessageError = {
   text?: string[];
   parent?: string[];

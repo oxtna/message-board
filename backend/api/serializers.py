@@ -36,7 +36,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'messages', 'favorites']
+        fields = ['url', 'id', 'username', 'messages', 'favorites']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -59,7 +59,7 @@ class MessageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['url', 'text', 'created', 'owner', 'parent', 'children', 'favorite_count', 'favorited']
+        fields = ['url', 'id', 'text', 'created', 'owner', 'parent', 'children', 'favorite_count', 'favorited']
 
 
 class FavoriteSerializer(serializers.HyperlinkedModelSerializer):

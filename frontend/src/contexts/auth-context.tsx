@@ -111,12 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       .catch((error) => {
         throw error;
       });
-
-    return () => {
-      if (tokens !== null) {
-        localStorage.setItem(LOCAL_STORAGE_TOKENS_IDENTIFIER, tokens.refresh);
-      }
-    };
   }, []);
 
   const value: AuthContextData = { loginUser, refreshToken };

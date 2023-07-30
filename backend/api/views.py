@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from .models import Message, User, Favorite
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, MessagePermission
 from .serializers import MessageSerializer, UserSerializer, RegistrationSerializer
 
 
@@ -74,7 +74,7 @@ class MessageList(generics.ListCreateAPIView):
 
 class MessageDetail(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [MessagePermission]
 
     def get_queryset(self):
         queryset = Message.objects.all().order_by('-created')

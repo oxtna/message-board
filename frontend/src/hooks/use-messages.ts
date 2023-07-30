@@ -4,7 +4,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import axios, { type AxiosError } from "axios";
-import type Message from "../interfaces/message";
+import type Message from "../api/types/message";
 
 export const useMessages = (
   urls: string[]

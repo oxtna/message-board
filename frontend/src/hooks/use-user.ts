@@ -1,14 +1,11 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import axios, { type AxiosError } from "axios";
-import type User from "../interfaces/user";
+import { getUser } from "../api/api";
+import type User from "../api/types/user";
 
-export const useUser = (url: string): UseQueryResult<User, AxiosError> => {
-  return useQuery<User, AxiosError>({
-    queryKey: ["users", url],
-    queryFn: async () => {
-      const response = await axios.get<User>(url);
-      return response.data;
-    },
+export const useUser = (id: number): UseQueryResult<User> => {
+  return useQuery<User>({
+    queryKey: ["users", id],
+    queryFn: async () => await getUser(id),
   });
 };
 

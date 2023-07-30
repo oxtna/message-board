@@ -1,6 +1,10 @@
-import { Form, redirect, useActionData } from "react-router-dom";
-import axios from "axios";
-import type Action from "../interfaces/action";
+import {
+  type ActionFunction,
+  Form,
+  redirect,
+  useActionData,
+} from "react-router-dom";
+import { register } from "../api/api";
 import { isString, isEmail } from "../utils";
 
 type RegisterErrors = {
@@ -10,13 +14,7 @@ type RegisterErrors = {
   passwordRepeat?: string;
 };
 
-type RegisterAPIResponse = {
-  username?: string[];
-  email?: string[];
-  password?: string[];
-};
-
-export const action: Action = async ({ request }) => {
+export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const username = formData.get("username")?.valueOf();
   const email = formData.get("email")?.valueOf();
@@ -38,27 +36,13 @@ export const action: Action = async ({ request }) => {
     return { passwordRepeat: "Passwords do not match" };
   }
 
-  const response = await axios.post<RegisterAPIResponse>(
-    "http://localhost:8000/api/register/",
-    {
-      username,
-      email,
-      password,
-      password_repeat: passwordRepeat,
-    }
-  );
+  const response = await register(username, email, password, passwordRepeat);
 
-  if (response.status === 400) {
-    const data: RegisterAPIResponse = response.data;
+  if (response.error !== undefined) {
     const errors = Object.fromEntries(
-      Object.entries(data).map(([key, value]) => [key, value[0]])
+      Object.entries(response.error).map(([key, value]) => [key, value[0]])
     );
     return errors;
-  }
-  if (response.status !== 201) {
-    throw new Error(
-      "Something went very wrong! If you see this page, please contact our support team."
-    );
   }
 
   return redirect("/login");

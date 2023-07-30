@@ -8,17 +8,26 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import authContext from "./contexts/auth-context";
 import Root from "./routes/root";
 import ErrorPage from "./routes/error-page";
-import Home from "./routes/home";
+import Home, {
+  actionFactory as homeActionFactory,
+  loaderFactory as homeLoaderFactory,
+} from "./routes/home";
 import UserProfile from "./routes/user-profile";
 import Login, { actionFactory as loginActionFactory } from "./routes/login";
 import Register, { action as registerAction } from "./routes/register";
+import axios from "axios";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      // staleTime: 10_000,
     },
   },
+});
+
+axios.interceptors.request.use((request) => {
+  console.log(request);
+  return request;
 });
 
 const App: React.FC = () => {
@@ -43,6 +52,8 @@ const App: React.FC = () => {
         },
         {
           path: "home",
+          action: homeActionFactory(queryClient, auth),
+          loader: homeLoaderFactory(queryClient, auth),
           element: <Home />,
         },
         {

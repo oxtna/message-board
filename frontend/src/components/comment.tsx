@@ -1,6 +1,6 @@
 import { Heading, Link, Text, VStack } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import type Message from "../interfaces/message";
+import type Message from "../api/types/message";
 import useUser from "../hooks/use-user";
 
 export type CommentProps = { message: Message };

@@ -1,6 +1,10 @@
-import { Form, redirect, useActionData } from "react-router-dom";
+import {
+  type ActionFunction,
+  Form,
+  redirect,
+  useActionData,
+} from "react-router-dom";
 import { type AuthContextData } from "../contexts/auth-context";
-import type Action from "../interfaces/action";
 import { isString } from "../utils";
 
 type LoginErrors = {
@@ -9,7 +13,7 @@ type LoginErrors = {
 };
 
 export const actionFactory =
-  (authContext: AuthContextData | null): Action =>
+  (authContext: AuthContextData | null): ActionFunction =>
   async ({ request }) => {
     const loginUser = authContext?.loginUser;
     if (loginUser === undefined) {
@@ -31,7 +35,7 @@ export const actionFactory =
       return { password: "Wrong password" };
     }
 
-    return redirect("/");
+    return redirect("/home");
   };
 
 const Login: React.FC = () => {

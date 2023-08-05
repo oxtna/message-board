@@ -6,7 +6,7 @@ import useUser from "../hooks/use-user";
 export type CommentProps = { message: Message };
 
 export const Comment: React.FC<CommentProps> = ({ message }: CommentProps) => {
-  const { isLoading, isError, error, data: owner } = useUser(message.owner);
+  const { isLoading, isError, error, data: owner } = useUser(message.id);
 
   if (isLoading) {
     return <div>Loading...</div>;

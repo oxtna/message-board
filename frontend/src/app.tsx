@@ -15,7 +15,6 @@ import Home, {
 import UserProfile from "./routes/user-profile";
 import Login, { actionFactory as loginActionFactory } from "./routes/login";
 import Register, { action as registerAction } from "./routes/register";
-import axios from "axios";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,11 +22,6 @@ const queryClient = new QueryClient({
       // staleTime: 10_000,
     },
   },
-});
-
-axios.interceptors.request.use((request) => {
-  console.log(request);
-  return request;
 });
 
 const App: React.FC = () => {

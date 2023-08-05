@@ -17,6 +17,22 @@ const API = axios.create({
   timeout: 2000,
 });
 
+API.interceptors.request.use(
+  (value) => value,
+  (error) => {
+    console.log(error);
+    throw error;
+  }
+);
+
+API.interceptors.response.use(
+  (value) => value,
+  (error) => {
+    console.log(error);
+    throw error;
+  }
+);
+
 export const getMessage = async (
   id: number,
   token?: string

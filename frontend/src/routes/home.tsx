@@ -1,19 +1,39 @@
 import { useRef, useCallback, useContext } from "react";
-import { type ActionFunction, redirect, useLoaderData } from "react-router-dom";
+import {
+  type ActionFunction,
+  redirect,
+  useLoaderData,
+  useNavigate,
+} from "react-router-dom";
 import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { Flex } from "@chakra-ui/react";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
 import Post from "../components/post";
-import { isString } from "../utils";
-import { favorite, getPosts, unfavorite } from "../api/api";
+import { getPosts } from "../api/api";
+import type Message from "../api/types/message";
+import { isAxiosError } from "axios";
+import { favoriteActionFactory } from "../actions";
 
+// adding `LoaderFunction` return type causes type mismatches here
 export const loaderFactory =
   (queryClient: QueryClient, authContext: AuthContextData) => async () => {
-    const token = authContext.token ?? undefined;
+    const user = authContext.getUser();
     return await queryClient.fetchInfiniteQuery({
-      queryKey: ["posts"],
-      queryFn: async ({ pageParam = 1 }) => await getPosts(pageParam, token),
+      queryKey: ["messages", user?.username],
+      queryFn: async ({ pageParam = 1 }) => {
+        try {
+          return await getPosts(pageParam);
+        } catch (error) {
+          if (isAxiosError(error) && error.response?.status === 403) {
+            return redirect("/home");
+          }
+          throw error;
+        }
+      },
       getNextPageParam: (lastPage, allPages) => {
+        if (lastPage instanceof Response) {
+          return undefined;
+        }
         if (lastPage.length === 0) {
           return undefined;
         }
@@ -23,38 +43,25 @@ export const loaderFactory =
     });
   };
 
-export const actionFactory = (
-  queryClient: QueryClient,
-  authContext: AuthContextData
-): ActionFunction => {
-  return async ({ request }) => {
-    const token = authContext.token ?? null;
-    if (token === null) {
-      return redirect("/login/");
+export const actionFactory =
+  (queryClient: QueryClient, authContext: AuthContextData): ActionFunction =>
+  async (args) => {
+    const formData = await args.request.formData();
+    const intent = formData.get("intent");
+    if (intent === null) {
+      throw new Error("Intent cannot be null");
     }
 
-    const formData = await request.formData();
-    const postID = formData.get("id")?.valueOf();
-    const favorited = formData.get("favorited")?.valueOf();
-    if (!isString(postID)) {
-      throw new Error("post id is not a string");
+    if (intent === "favorite") {
+      const favoriteAction = favoriteActionFactory(queryClient, authContext);
+      return await favoriteAction(formData);
     }
-    if (!isString(favorited)) {
-      throw new Error("favorite is not a string");
-    }
-    if (favorited === "false") {
-      await favorite(+postID, token);
-    } else if (favorited === "true") {
-      await unfavorite(+postID, token);
-    }
-
-    await queryClient.invalidateQueries({ queryKey: ["messages"] });
-    return {};
   };
-};
 
 const Home: React.FC = () => {
-  const { token } = useContext<AuthContextData>(authContext);
+  const user = useContext<AuthContextData>(authContext).getUser();
+
+  const navigate = useNavigate();
 
   const initialData = useLoaderData() as Awaited<
     ReturnType<ReturnType<typeof loaderFactory>>
@@ -68,10 +75,24 @@ const Home: React.FC = () => {
     error,
     data,
   } = useInfiniteQuery(
-    ["messages", token],
-    async ({ pageParam = 1 }) => await getPosts(pageParam, token),
+    ["messages", user?.username],
+    async ({ pageParam = 1 }) => {
+      try {
+        const posts = await getPosts(pageParam);
+        return posts;
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 403) {
+          navigate("/home");
+          return [];
+        }
+        throw error;
+      }
+    },
     {
       getNextPageParam: (lastPage, allPages) => {
+        if (lastPage instanceof Response) {
+          return undefined;
+        }
         if (lastPage.length === 0) {
           return undefined;
         }
@@ -109,7 +130,10 @@ const Home: React.FC = () => {
     throw error;
   }
 
-  const messages = data?.pages.flat(1);
+  const messages = data?.pages
+    .flat(1)
+    .filter((value): value is Message => !(value instanceof Response));
+
   const posts = messages?.map((message, i) => {
     if (i + 1 === messages.length) {
       return <Post ref={lastPostRef} key={message.id} message={message} />;

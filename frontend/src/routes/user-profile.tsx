@@ -4,7 +4,7 @@ import usePagedMessages from "../hooks/use-paged-messages";
 import Post from "../components/post";
 
 const UserProfile: React.FC = () => {
-  const username = useContext(authContext).user?.username;
+  const username = useContext(authContext).getUser()?.username;
   const { isLoading, isError, error, data } = usePagedMessages();
 
   if (isLoading) {

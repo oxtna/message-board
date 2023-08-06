@@ -11,8 +11,6 @@ import {
   Input,
   Link,
   Text,
-  VStack,
-  useBoolean,
   Spacer,
 } from "@chakra-ui/react";
 import { ChatIcon, CloseIcon, StarIcon } from "@chakra-ui/icons";
@@ -20,9 +18,6 @@ import { useFetcher, Link as RouterLink } from "react-router-dom";
 import { useRef, useCallback, forwardRef } from "react";
 import type Message from "../api/types/message";
 import useUser from "../hooks/use-user";
-import useMessages from "../hooks/use-messages";
-import Comment from "./comment";
-import PostAction from "./post-action";
 
 export type PostProps = {
   message: Message;
@@ -47,22 +42,11 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
     data: owner,
   } = useUser(ownerID);
 
-  const commentQueryResults = useMessages(message.children);
-
-  const [commentsExpanded, setCommentsExpanded] = useBoolean(false);
-
   const favoriteButtonRef = useRef<HTMLButtonElement>(null);
-
-  const commentsButtonRef = useRef<HTMLButtonElement>(null);
 
   const onFavoriteClick = useCallback((): void => {
     favoriteButtonRef.current?.blur();
   }, [favoriteButtonRef]);
-
-  const onCommentsClick = useCallback((): void => {
-    setCommentsExpanded.on();
-    commentsButtonRef.current?.blur();
-  }, [setCommentsExpanded, commentsButtonRef]);
 
   if (isUserLoading) {
     return <div>Loading...</div>;
@@ -70,19 +54,6 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
   if (isUserError) {
     throw userError;
   }
-
-  const comments = commentQueryResults.map(
-    ({ isLoading, isError, error, data: comment }, i) => {
-      const keys = message.children;
-      if (isLoading) {
-        return <div key={keys[i]}>Loading...</div>;
-      }
-      if (isError) {
-        throw error;
-      }
-      return <Comment key={comment.url} message={comment} />;
-    }
-  );
 
   let postTime: string;
   const minutesAgo = (Date.now() - message.created.getTime()) / (60 * 1000);
@@ -114,13 +85,13 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
           <Heading fontWeight={400} fontSize="lg" color="gray.500">
             <Link
               as={RouterLink}
-              to={`/user/${owner?.username}`}
+              to={`/user/${owner.username}`}
               borderRadius="sm"
               p={2}
               _hover={{ color: "teal.400" }}
               _focus={{ color: "teal.400" }}
             >
-              {owner?.username}
+              {owner.username}
             </Link>
           </Heading>
           <Spacer />
@@ -142,18 +113,25 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
               ref={favoriteButtonRef}
               onClick={onFavoriteClick}
               type="submit"
-              name="favorited"
-              value={favorited ? "true" : "false"}
+              name="intent"
+              value="favorite"
               fontWeight={400}
               color="white"
               bgColor="gray.800"
-              p={4}
+              height="100%"
               borderRadius="md"
               _hover={{ bgColor: "gray.700" }}
               _focus={{ bgColor: "gray.700" }}
             >
               <HStack justifyContent="space-between">
-                {!favorited && (
+                {favorited ? (
+                  <>
+                    <CloseIcon mb={1} boxSize={3} />
+                    <Text display={{ base: "none", md: "initial" }}>
+                      Unfavorite
+                    </Text>
+                  </>
+                ) : (
                   <>
                     <StarIcon mb={1.5} />
                     <Text display={{ base: "none", md: "initial" }}>
@@ -161,28 +139,33 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
                     </Text>
                   </>
                 )}
-                {favorited && (
-                  <>
-                    <CloseIcon mb={1} boxSize={3} />
-                    <Text display={{ base: "none", md: "initial" }}>
-                      Unfavorite
-                    </Text>
-                  </>
-                )}
               </HStack>
             </Button>
-            <Input type="hidden" name="id" value={message.id} readOnly={true} />
+            <Input
+              type="hidden"
+              name="favorited"
+              value={favorited ? "true" : "false"}
+              readOnly
+            />
+            <Input type="hidden" name="id" value={message.id} readOnly />
           </fetcher.Form>
-          <PostAction onClick={onCommentsClick} ref={commentsButtonRef}>
-            <ChatIcon mb={0.5} />
-            <Text display={{ base: "none", md: "initial" }}>Comments</Text>
-          </PostAction>
+          <Link
+            as={RouterLink}
+            to={`/message/${message.id}`}
+            fontWeight={400}
+            color="white"
+            bgColor="gray.800"
+            p={4}
+            borderRadius="md"
+            _hover={{ bgColor: "gray.700" }}
+            _focus={{ bgColor: "gray.700" }}
+          >
+            <HStack justifyContent="space-between">
+              <ChatIcon mb={0.5} />
+              <Text display={{ base: "none", md: "initial" }}>Comments</Text>
+            </HStack>
+          </Link>
         </Flex>
-        {commentsExpanded && (
-          <VStack alignItems="flex-start" p={4} gap={5}>
-            {comments}
-          </VStack>
-        )}
       </CardFooter>
     </Card>
   );

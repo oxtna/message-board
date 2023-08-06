@@ -1,16 +1,16 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useEffect, useCallback } from "react";
 import jwt_decode from "jwt-decode";
-import { type TokenPair, type Token } from "../api/types/tokens";
-import { obtainTokens, refreshTokens } from "../api/api";
+import {
+  LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
+  LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER,
+  LOCAL_STORAGE_USERNAME_IDENTIFIER,
+  LOCAL_STORAGE_USER_ID_IDENTIFIER,
+} from "../constants";
+import { type Token } from "../api/types/tokens";
+import { obtainTokens } from "../api/api";
 
+type GetAuthUserFunction = () => AuthUser | null;
 type LoginFunction = (username: string, password: string) => Promise<boolean>;
-type RefreshFunction = () => Promise<boolean>;
 
 export type AuthUser = {
   userID: number;
@@ -18,17 +18,13 @@ export type AuthUser = {
 };
 
 export type AuthContextData = {
-  user?: AuthUser;
-  token?: string;
+  getUser: GetAuthUserFunction;
   loginUser: LoginFunction;
-  refreshToken: RefreshFunction;
 };
 
-const LOCAL_STORAGE_TOKENS_IDENTIFIER = "auth-token";
-
 const authContext = createContext<AuthContextData>({
+  getUser: () => null,
   loginUser: async (_, __) => false,
-  refreshToken: async () => false,
 });
 
 type AuthProviderProps = {
@@ -38,9 +34,14 @@ type AuthProviderProps = {
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
 }: AuthProviderProps) => {
-  const [tokens, setTokens] = useState<TokenPair | null>(null);
-  const [userID, setUserID] = useState<number | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
+  const getUser: GetAuthUserFunction = useCallback(() => {
+    const userID = localStorage.getItem(LOCAL_STORAGE_USER_ID_IDENTIFIER);
+    const username = localStorage.getItem(LOCAL_STORAGE_USERNAME_IDENTIFIER);
+    if (userID === null || username === null) {
+      return null;
+    }
+    return { username, userID: +userID };
+  }, []);
 
   const loginUser: LoginFunction = useCallback(
     async (username, password) => {
@@ -59,74 +60,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         throw new Error("Bad API response");
       }
 
-      setTokens(result.data);
       const decoded = jwt_decode<Token>(result.data.access);
-      setUserID(decoded.user_id);
-      setUsername(decoded.username);
       localStorage.setItem(
-        LOCAL_STORAGE_TOKENS_IDENTIFIER,
+        LOCAL_STORAGE_USER_ID_IDENTIFIER,
+        decoded.user_id.toString()
+      );
+      localStorage.setItem(LOCAL_STORAGE_USERNAME_IDENTIFIER, decoded.username);
+      localStorage.setItem(
+        LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER,
         result.data.refresh
+      );
+      localStorage.setItem(
+        LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
+        result.data.access
       );
       return true;
     },
-    [obtainTokens, setTokens, setUserID, setUsername]
+    [obtainTokens]
   );
 
-  const refreshToken: RefreshFunction = useCallback(async () => {
-    if (tokens === null) {
-      return false;
-    }
-    const result = await refreshTokens(tokens.refresh);
-    if (result.error !== undefined) {
-      setUserID(null);
-      setUsername(null);
-      setTokens(null);
-      return false;
-      // throw new Error(`${result.error.code}: ${result.error.detail}`);
-    }
-    if (result.data === undefined) {
-      throw new Error("Bad API response");
-    }
-
-    setTokens(result.data);
-    localStorage.setItem(LOCAL_STORAGE_TOKENS_IDENTIFIER, result.data.refresh);
-    return true;
-  }, [refreshTokens, setTokens, setUserID, setUsername]);
-
   useEffect(() => {
-    const storedToken = localStorage.getItem(LOCAL_STORAGE_TOKENS_IDENTIFIER);
-    if (storedToken === null) {
-      return;
+    const token = localStorage.getItem(LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER);
+    if (token !== null) {
+      const decoded = jwt_decode<Token>(token);
+      localStorage.setItem(
+        LOCAL_STORAGE_USER_ID_IDENTIFIER,
+        decoded.user_id.toString()
+      );
+      localStorage.setItem(LOCAL_STORAGE_USERNAME_IDENTIFIER, decoded.username);
     }
-    setTokens({ access: "", refresh: storedToken });
-    refreshToken()
-      .then((ok) => {
-        if (ok) {
-          const token = tokens?.access ?? "never";
-          const decoded = jwt_decode<Token>(token);
-          setUserID(decoded.user_id);
-          setUsername(decoded.username);
-        }
-      })
-      .catch((error) => {
-        throw error;
-      });
   }, []);
 
-  const value: AuthContextData = { loginUser, refreshToken };
-  if (userID !== null && username !== null) {
-    value.user = { userID, username };
-  }
-  if (tokens !== null) {
-    value.token = tokens.access;
-  }
+  const value: AuthContextData = { getUser, loginUser };
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
-};
-
-export const useAuthUser = (): AuthUser | null => {
-  const user = useContext(authContext).user;
-  return user ?? null;
 };
 
 export default authContext;

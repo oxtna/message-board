@@ -9,28 +9,23 @@ import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { Flex } from "@chakra-ui/react";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
 import Post from "../components/post";
-import { isString } from "../utils";
-import { favorite, getPosts, unfavorite } from "../api/api";
+import { getPosts } from "../api/api";
 import type Message from "../api/types/message";
 import { isAxiosError } from "axios";
+import { favoriteActionFactory } from "../actions";
 
+// adding `LoaderFunction` return type causes type mismatches here
 export const loaderFactory =
   (queryClient: QueryClient, authContext: AuthContextData) => async () => {
-    let token = authContext.getToken();
+    const user = authContext.getUser();
     return await queryClient.fetchInfiniteQuery({
-      queryKey: ["posts", token],
+      queryKey: ["messages", user?.username],
       queryFn: async ({ pageParam = 1 }) => {
         try {
-          const posts = await getPosts(pageParam, token ?? undefined);
-          return posts;
+          return await getPosts(pageParam);
         } catch (error) {
           if (isAxiosError(error) && error.response?.status === 403) {
-            const isRefreshed = await authContext.refreshToken();
-            if (!isRefreshed) {
-              return redirect("/home");
-            }
-            token = authContext.getToken();
-            return await getPosts(pageParam, token ?? undefined);
+            return redirect("/home");
           }
           throw error;
         }
@@ -48,47 +43,23 @@ export const loaderFactory =
     });
   };
 
-export const actionFactory = (
-  queryClient: QueryClient,
-  authContext: AuthContextData
-): ActionFunction => {
-  return async ({ request }) => {
-    const token = authContext.getToken();
-    if (token === null) {
-      return redirect("/login");
+export const actionFactory =
+  (queryClient: QueryClient, authContext: AuthContextData): ActionFunction =>
+  async (args) => {
+    const formData = await args.request.formData();
+    const intent = formData.get("intent");
+    if (intent === null) {
+      throw new Error("Intent cannot be null");
     }
 
-    const formData = await request.formData();
-    const postID = formData.get("id")?.valueOf();
-    const favorited = formData.get("favorited")?.valueOf();
-    if (!isString(postID)) {
-      throw new Error("post id is not a string");
+    if (intent === "favorite") {
+      const favoriteAction = favoriteActionFactory(queryClient, authContext);
+      return await favoriteAction(formData);
     }
-    if (!isString(favorited)) {
-      throw new Error("favorite is not a string");
-    }
-    let result: Awaited<ReturnType<typeof favorite>>;
-    if (favorited === "false") {
-      result = await favorite(+postID, token);
-    } else if (favorited === "true") {
-      result = await unfavorite(+postID, token);
-    } else {
-      throw new Error(
-        'Invalid form value: favorited must be either "false" or "true"'
-      );
-    }
-    if (result.error !== undefined) {
-      throw new Error(result.error.detail);
-    }
-    await queryClient.invalidateQueries({ queryKey: ["posts"] });
-    return {};
   };
-};
 
 const Home: React.FC = () => {
-  const { getToken, refreshToken } = useContext<AuthContextData>(authContext);
-
-  let token = getToken();
+  const user = useContext<AuthContextData>(authContext).getUser();
 
   const navigate = useNavigate();
 
@@ -104,20 +75,15 @@ const Home: React.FC = () => {
     error,
     data,
   } = useInfiniteQuery(
-    ["posts", token],
+    ["messages", user?.username],
     async ({ pageParam = 1 }) => {
       try {
-        const posts = await getPosts(pageParam, token ?? undefined);
+        const posts = await getPosts(pageParam);
         return posts;
       } catch (error) {
         if (isAxiosError(error) && error.response?.status === 403) {
-          const isRefreshed = await refreshToken();
-          if (!isRefreshed) {
-            navigate("/home");
-            return [];
-          }
-          token = getToken();
-          return await getPosts(pageParam, token ?? undefined);
+          navigate("/home");
+          return [];
         }
         throw error;
       }

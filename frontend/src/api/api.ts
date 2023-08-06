@@ -1,4 +1,4 @@
-import axios, { type RawAxiosRequestHeaders, isAxiosError } from "axios";
+import axios, { isAxiosError } from "axios";
 import type Result from "./types/result";
 import type PagedResponse from "./types/paged-response";
 import type Message from "./types/message";
@@ -11,14 +11,26 @@ import {
   type RefreshTokenError,
   type FavoriteError,
 } from "./types/errors";
+import {
+  LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
+  LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER,
+  LOCAL_STORAGE_USERNAME_IDENTIFIER,
+  LOCAL_STORAGE_USER_ID_IDENTIFIER,
+} from "../constants";
 
 const API = axios.create({
   baseURL: "http://localhost:8000/api/",
-  timeout: 2000,
+  timeout: 5000,
 });
 
 API.interceptors.request.use(
-  (value) => value,
+  (config) => {
+    const token = localStorage.getItem(LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER);
+    if (token !== null) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
   (error) => {
     console.log(error);
     throw error;
@@ -26,78 +38,75 @@ API.interceptors.request.use(
 );
 
 API.interceptors.response.use(
-  (value) => value,
-  (error) => {
+  (response) => response,
+  async (error) => {
     console.log(error);
+    if (error.config === undefined) {
+      throw error;
+    }
+    if (isAxiosError(error) && error.response?.status === 403) {
+      const refreshToken = localStorage.getItem(
+        LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER
+      );
+      if (refreshToken === null) {
+        throw error;
+      }
+      const result = await refreshTokens(refreshToken);
+      if (result.error !== undefined) {
+        localStorage.removeItem(LOCAL_STORAGE_USER_ID_IDENTIFIER);
+        localStorage.removeItem(LOCAL_STORAGE_USERNAME_IDENTIFIER);
+        localStorage.removeItem(LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER);
+        localStorage.removeItem(LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER);
+        throw error;
+      }
+      if (result.data === undefined) {
+        throw new Error("Bad API response");
+      }
+
+      localStorage.setItem(
+        LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER,
+        result.data.refresh
+      );
+      localStorage.setItem(
+        LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
+        result.data.access
+      );
+
+      error.config.headers.Authorization = `Bearer ${result.data.access}`;
+      return await API(error.config);
+    }
     throw error;
   }
 );
 
-export const getMessage = async (
-  id: number,
-  token?: string
-): Promise<Message> => {
-  const headers: RawAxiosRequestHeaders = {};
-  if (token !== undefined) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  const response = await API.get<Message>(`messages/${id}/`, { headers });
-  const message = response.data;
+export const getMessage = async (id: number): Promise<Message> => {
+  const response = await API.get(`messages/${id}/`);
+  const message = response.data as Message;
   message.created = new Date(message.created);
   return message;
 };
 
-export const getMessages = async (
-  page = 1,
-  token?: string
-): Promise<Message[]> => {
-  const headers: RawAxiosRequestHeaders = {};
-  if (token !== undefined) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  const response = await API.get<PagedResponse<Message>>(
-    `messages/?page=${page}`,
-    { headers }
-  );
-  const messages = response.data.results;
+export const getMessages = async (page = 1): Promise<Message[]> => {
+  const response = await API.get(`messages/?page=${page}`);
+  const messages = (response.data as PagedResponse<Message>).results;
   for (const message of messages) {
     message.created = new Date(message.created);
   }
   return messages;
 };
 
-export const getPosts = async (
-  page = 1,
-  token?: string
-): Promise<Message[]> => {
-  const headers: RawAxiosRequestHeaders = {};
-  if (token !== undefined) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  const response = await API.get<PagedResponse<Message>>(
-    `messages/?page=${page}&posts=true`,
-    { headers }
-  );
-  const posts = response.data.results;
+export const getPosts = async (page = 1): Promise<Message[]> => {
+  const response = await API.get(`messages/?page=${page}&posts=true`);
+  const posts = (response.data as PagedResponse<Message>).results;
   for (const post of posts) {
     post.created = new Date(post.created);
   }
   return posts;
 };
 
-export const getComments = async (
-  page = 1,
-  token?: string
-): Promise<Message[]> => {
-  const headers: RawAxiosRequestHeaders = {};
-  if (token !== undefined) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  const response = await API.get<PagedResponse<Message>>(
-    `messages/?page=${page}&posts=false`,
-    { headers }
-  );
-  const comments = response.data.results;
+export const getComments = async (page = 1): Promise<Message[]> => {
+  const response = await API.get(`messages/?page=${page}&posts=false`);
+  const comments = (response.data as PagedResponse<Message>).results;
   for (const comment of comments) {
     comment.created = new Date(comment.created);
   }
@@ -105,13 +114,13 @@ export const getComments = async (
 };
 
 export const getUser = async (id: number): Promise<User> => {
-  const response = await API.get<User>(`users/${id}/`);
-  return response.data;
+  const response = await API.get(`users/${id}/`);
+  return response.data as User;
 };
 
 export const getUsers = async (page = 1): Promise<User[]> => {
-  const response = await API.get<PagedResponse<User>>(`users/?page=${page}`);
-  return response.data.results;
+  const response = await API.get(`users/?page=${page}`);
+  return (response.data as PagedResponse<User>).results;
 };
 
 export const obtainTokens = async (
@@ -119,7 +128,7 @@ export const obtainTokens = async (
   password: string
 ): Promise<Result<TokenPair, ObtainTokenError>> => {
   try {
-    const response = await API.post<TokenPair>("token/", {
+    const response = await API.post("token/", {
       username,
       password,
     });
@@ -142,7 +151,7 @@ export const refreshTokens = async (
   refresh: string
 ): Promise<Result<TokenPair, RefreshTokenError>> => {
   try {
-    const response = await API.post<TokenPair>("token/refresh/", { refresh });
+    const response = await API.post("token/refresh/", { refresh });
     if (!isTokens(response.data)) {
       throw new Error("Bad API Response");
     }
@@ -165,13 +174,14 @@ export const register = async (
   passwordRepeat: string
 ): Promise<Result<RegisterResponse, RegisterError>> => {
   try {
-    const response = await API.post<RegisterResponse>("register/", {
+    const response = await API.post("register/", {
       username,
       email,
       password,
       password_repeat: passwordRepeat,
     });
-    return { data: response.data };
+    const data = response.data as RegisterResponse;
+    return { data };
   } catch (error) {
     if (
       isAxiosError<RegisterError>(error) &&
@@ -184,19 +194,10 @@ export const register = async (
 };
 
 export const favorite = async (
-  messageID: number,
-  token: string
+  messageID: number
 ): Promise<Result<undefined, FavoriteError>> => {
   try {
-    const headers: RawAxiosRequestHeaders = {
-      Authorization: `Bearer ${token}`,
-    };
-    await API.post<undefined>(
-      `messages/${messageID}/favorite/`,
-      {},
-      { headers }
-    );
-    return {};
+    return await API.post(`messages/${messageID}/favorite/`, {});
   } catch (error) {
     if (
       isAxiosError<FavoriteError>(error) &&
@@ -209,15 +210,10 @@ export const favorite = async (
 };
 
 export const unfavorite = async (
-  messageID: number,
-  token: string
+  messageID: number
 ): Promise<Result<undefined, FavoriteError>> => {
   try {
-    const headers: RawAxiosRequestHeaders = {
-      Authorization: `Bearer ${token}`,
-    };
-    await API.delete<undefined>(`messages/${messageID}/favorite/`, { headers });
-    return {};
+    return await API.delete(`messages/${messageID}/favorite/`);
   } catch (error) {
     if (
       isAxiosError<FavoriteError>(error) &&

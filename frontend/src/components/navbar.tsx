@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Stack, Spacer, Box } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
-import { useAuthUser } from "../contexts/auth-context";
 import NavbarLink from "./navbar-link";
+import authContext from "../contexts/auth-context";
 
 const Navbar: React.FC = () => {
   const [borderOpacity, setBorderOpacity] = useState<number>(0);
 
-  const username = useAuthUser()?.username;
+  const user = useContext(authContext).getUser();
 
   useEffect(() => {
     const handleScroll = (): void => {
@@ -50,14 +50,14 @@ const Navbar: React.FC = () => {
         />
         <Spacer />
         <NavbarLink to="/home">Home</NavbarLink>
-        {username === undefined && (
+        {user === null && (
           <>
             <NavbarLink to="/login">Login</NavbarLink>
             <NavbarLink to="/register">Register</NavbarLink>
           </>
         )}
-        {username !== undefined && (
-          <NavbarLink to="/profile">{username}</NavbarLink>
+        {user !== null && (
+          <NavbarLink to="/profile">{user.username}</NavbarLink>
         )}
       </Stack>
       <Box

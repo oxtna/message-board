@@ -12,6 +12,10 @@ import Home, {
   actionFactory as homeActionFactory,
   loaderFactory as homeLoaderFactory,
 } from "./routes/home";
+import MessageExpanded, {
+  actionFactory as messageActionFactory,
+  loaderFactory as messageLoaderFactory,
+} from "./routes/message-expanded";
 import UserProfile from "./routes/user-profile";
 import Login, { actionFactory as loginActionFactory } from "./routes/login";
 import Register, { action as registerAction } from "./routes/register";
@@ -53,6 +57,12 @@ const App: React.FC = () => {
         {
           path: "profile",
           element: <UserProfile />,
+        },
+        {
+          path: "message/:messageID",
+          element: <MessageExpanded />,
+          action: messageActionFactory(queryClient, auth),
+          loader: messageLoaderFactory(queryClient, auth),
         },
       ],
     },

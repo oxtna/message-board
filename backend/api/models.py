@@ -34,6 +34,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ['id']
+        constraints = [models.UniqueConstraint(fields=['username'], name='user_username_once'),
+                       models.UniqueConstraint(fields=['email'], name='user_email_once')]
 
     def clean(self):
         super().clean()
@@ -48,8 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Message(models.Model):
     text = models.CharField(max_length=250)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True, related_name='children')
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='messages')
     favorited_by = models.ManyToManyField(User, through='Favorite', related_name='favorites')
     created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
@@ -63,3 +65,12 @@ class Favorite(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['user', 'message'], name='favorite_once')]
+
+
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following')
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
+    objects = models.Manager()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['follower', 'following'], name='follow_once')]

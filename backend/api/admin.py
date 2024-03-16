@@ -13,30 +13,32 @@ class UserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'is_staff')
+        fields = ("username", "email", "password", "is_staff")
 
     def clean_password(self):
-        return self.initial['password']
+        return self.initial["password"]
 
 
 class UserCreationForm(forms.ModelForm):
-    password = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password_repeat = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+    password = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password_repeat = forms.CharField(
+        label="Password confirmation", widget=forms.PasswordInput
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'is_staff')
+        fields = ("username", "email", "is_staff")
 
     def clean_password_repeat(self):
-        password = self.cleaned_data.get('password')
-        password_repeat = self.cleaned_data.get('password_repeat')
+        password = self.cleaned_data.get("password")
+        password_repeat = self.cleaned_data.get("password_repeat")
         if password and password_repeat and password != password_repeat:
             raise ValidationError("Passwords don't match")
         return password_repeat
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
+        user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
         return user
@@ -45,29 +47,38 @@ class UserCreationForm(forms.ModelForm):
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
-    list_display = ('username', 'email', 'is_superuser', 'is_staff')
-    list_filter = ('is_superuser', 'is_staff')
+    list_display = ("username", "email", "is_superuser", "is_staff")
+    list_filter = ("is_superuser", "is_staff")
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password')}),
-        ('Permissions', {'fields': ('is_superuser', 'is_staff')}),
+        (None, {"fields": ("username", "email", "password")}),
+        ("Permissions", {"fields": ("is_superuser", "is_staff")}),
     )
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'password', 'password_repeat', 'is_staff'),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "email",
+                    "password",
+                    "password_repeat",
+                    "is_staff",
+                ),
+            },
+        ),
     )
-    search_fields = ('username', 'email')
-    ordering = ('username', 'email')
+    search_fields = ("username", "email")
+    ordering = ("username", "email")
     filter_horizontal = ()
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('text', 'created', 'owner', 'parent')
+    list_display = ("text", "created", "owner", "parent")
 
 
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'message', 'created')
+    list_display = ("user", "message", "created")
 
 
 admin.site.register(User, UserAdmin)

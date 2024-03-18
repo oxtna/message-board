@@ -4,6 +4,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.contrib.auth.validators import ASCIIUsernameValidator
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _
 from django.db import models
 
 
@@ -32,6 +34,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    followers = models.ManyToManyField(
+        "self",
+        through="Follow",
+        through_fields=("following", "follower"),
+        symmetrical=False,
+        related_name="followings",
+    )
     objects = UserManager()
 
     USERNAME_FIELD = "username"
@@ -69,16 +78,19 @@ class Message(models.Model):
         User, on_delete=models.SET_NULL, null=True, related_name="messages"
     )
     favorited_by = models.ManyToManyField(
-        User, through="Favorite", related_name="favorites"
+        User,
+        through="Favorite",
+        through_fields=("message", "user"),
+        related_name="favorites",
     )
-    created = models.DateTimeField(auto_now_add=True)
+    time_created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
 
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
+    time_created = models.DateTimeField(auto_now_add=True)
     objects = models.Manager()
 
     class Meta:
@@ -88,11 +100,12 @@ class Favorite(models.Model):
 
 
 class Follow(models.Model):
+    # Follower --follows--> Following
     follower = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="following"
+        User, on_delete=models.CASCADE, related_name="from_followers"
     )
     following = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="followers"
+        User, on_delete=models.CASCADE, related_name="to_followings"
     )
     objects = models.Manager()
 
@@ -102,3 +115,12 @@ class Follow(models.Model):
                 fields=["follower", "following"], name="follow_once"
             )
         ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("follower") == cleaned_data.get("following"):
+            raise ValidationError(
+                _("Invalid values: follower and following cannot have the same value"),
+                code="invalid",
+            )
+        return cleaned_data

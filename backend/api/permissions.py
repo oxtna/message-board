@@ -10,6 +10,19 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return request.method in permissions.SAFE_METHODS or obj.owner == request.user
 
 
+class FollowPermission(permissions.BasePermission):
+    """
+    Permissions for following and unfollowing a user.
+    """
+
+    def has_permission(self, request, view) -> bool:
+        return (
+            request.user.is_authenticated
+            if view.action in ["follow", "unfollow"]
+            else True
+        )
+
+
 class MessagePermission(permissions.BasePermission):
     """
     Permissions for different actions on the message.

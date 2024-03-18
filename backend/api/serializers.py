@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import Message, User, Favorite
+from api.models import Message, User, Follow
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -37,37 +37,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         )
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ["url", "id", "username", "messages", "favorites"]
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        ordered_messages = instance.messages.order_by("-created")
-        ordered_messages = MessageSerializer(
-            ordered_messages, many=True, context=self.context
-        ).data
-        representation["messages"] = [message["url"] for message in ordered_messages]
-        ordered_favorite_set = instance.favorite_set.order_by("-created")
-        ordered_favorite_set = [favorite.message for favorite in ordered_favorite_set]
-        ordered_favorite_set = MessageSerializer(
-            ordered_favorite_set, many=True, context=self.context
-        ).data
-        representation["favorites"] = [
-            favorite["url"] for favorite in ordered_favorite_set
-        ]
-        return representation
-
-
 class MessageSerializer(serializers.HyperlinkedModelSerializer):
-    children = serializers.HyperlinkedRelatedField(
-        many=True, read_only=True, view_name="message-detail"
-    )
-    parent = serializers.HyperlinkedRelatedField(
-        queryset=Message.objects.all(), view_name="message-detail"
-    )
-    owner = serializers.HyperlinkedRelatedField(read_only=True, view_name="user-detail")
     favorite_count = serializers.IntegerField(read_only=True)
     favorited = serializers.BooleanField(read_only=True)
 
@@ -77,7 +47,7 @@ class MessageSerializer(serializers.HyperlinkedModelSerializer):
             "url",
             "id",
             "text",
-            "created",
+            "time_created",
             "owner",
             "parent",
             "children",
@@ -86,12 +56,32 @@ class MessageSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class FavoriteSerializer(serializers.HyperlinkedModelSerializer):
-    message = serializers.HyperlinkedRelatedField(
-        read_only=True, view_name="message-detail"
+class FollowSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Follow
+        fields = ["url", "follower", "following"]
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    followers = serializers.HyperlinkedRelatedField(
+        many=True, view_name="user-detail", read_only=True
     )
-    user = serializers.HyperlinkedRelatedField(read_only=True, view_name="user-detail")
+    followings = serializers.HyperlinkedRelatedField(
+        many=True, view_name="user-detail", read_only=True
+    )
 
     class Meta:
-        model = Favorite
-        fields = ["message", "user", "created"]
+        model = User
+        fields = ["url", "id", "username", "followers", "followings"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["messages"] = [
+            MessageSerializer(instance=message, context=self.context).data["url"]
+            for message in instance.messages.order_by("-time_created")
+        ]
+        representation["favorites"] = [
+            MessageSerializer(instance=favorite, context=self.context).data["url"]
+            for favorite in instance.favorites.order_by("-time_created")
+        ]
+        return representation

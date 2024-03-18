@@ -74,11 +74,11 @@ class UserAdmin(BaseUserAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("text", "created", "owner", "parent")
+    list_display = ("text", "time_created", "owner", "parent")
 
 
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ("user", "message", "created")
+    list_display = ("user", "message", "time_created")
 
 
 admin.site.register(User, UserAdmin)

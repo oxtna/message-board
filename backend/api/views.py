@@ -5,9 +5,9 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from .models import Message, User, Favorite
-from .permissions import IsOwnerOrReadOnly, MessagePermission
-from .serializers import MessageSerializer, UserSerializer, RegistrationSerializer
+from api.models import Message, User, Favorite, Follow
+from api.permissions import IsOwnerOrReadOnly, MessagePermission, FollowPermission
+from api.serializers import MessageSerializer, UserSerializer, RegistrationSerializer
 
 
 class APIRoot(views.APIView):
@@ -15,11 +15,11 @@ class APIRoot(views.APIView):
     def get(request) -> Response:
         return Response(
             {
-                "users": reverse("user-list", request=request),
-                "messages": reverse("message-list", request=request),
+                "users": reverse("user_list", request=request),
+                "messages": reverse("message_list", request=request),
                 "register": reverse("register", request=request),
-                "obtain_token": reverse("token_obtain_pair", request=request),
-                "refresh_token": reverse("token_refresh", request=request),
+                "obtain_token": reverse("token-obtain-pair", request=request),
+                "refresh_token": reverse("token-refresh", request=request),
             }
         )
 
@@ -36,14 +36,22 @@ class RegistrationAPIView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserList(generics.ListAPIView):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly, FollowPermission]
 
+    @action(detail=True, methods=["post"], name="follow")
+    def follow(self, request, *args, **kwargs) -> Response:
+        Follow.objects.get_or_create(follower=request.user, following=self.get_object())
+        return Response(status=status.HTTP_201_CREATED)
 
-class UserDetail(generics.RetrieveAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
+    @action(detail=True, methods=["post"], name="unfollow")
+    def unfollow(self, request, *args, **kwargs) -> Response:
+        Follow.objects.filter(
+            follower=request.user, following=self.get_object()
+        ).delete()
+        return Response(status=status.HTTP_200_OK)
 
 
 class MessageList(generics.ListCreateAPIView):
@@ -51,7 +59,7 @@ class MessageList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        queryset = Message.objects.all().order_by("-created")
+        queryset = Message.objects.all().order_by("-time_created")
         queryset = queryset.annotate(favorite_count=Count("favorited_by")).annotate(
             favorited=Exists(
                 Favorite.objects.filter(
@@ -78,12 +86,12 @@ class MessageList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class MessageDetail(viewsets.ModelViewSet):
+class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [MessagePermission]
 
     def get_queryset(self):
-        queryset = Message.objects.all().order_by("-created")
+        queryset = Message.objects.all().order_by("-time_created")
         queryset = queryset.annotate(favorite_count=Count("favorited_by")).annotate(
             favorited=Exists(
                 Favorite.objects.filter(

@@ -16,6 +16,7 @@ import {
   LOCAL_STORAGE_USERNAME_IDENTIFIER,
   LOCAL_STORAGE_USER_ID_IDENTIFIER,
 } from "../constants";
+import type PagedResponse from "./types/paged-response";
 
 const API = axios.create({
   timeout: 5000,
@@ -85,21 +86,43 @@ export const getData = async <T>(url: string): Promise<T> => {
   return data;
 };
 
-export const getUser = async (id: number | null): Promise<User> => {
-  if (id === null) {
+export const getUser = async (
+  identifier: string | number | null
+): Promise<User> => {
+  if (identifier === null) {
     return {
       id: 0,
-      url: "Deleted",
+      url: "",
       username: "Deleted",
       favorites: [],
       messages: [],
     };
   }
-  return await getData<User>(`http://localhost:8000/api/users/${id}/`);
+  if (typeof identifier === "number") {
+    return await getData<User>(
+      `http://localhost:8000/api/users/${identifier}/`
+    );
+  }
+  return await getData<User>(identifier);
 };
 
-export const getMessage = async (id: number): Promise<Message> => {
-  return await getData<Message>(`http://localhost:8000/api/messages/${id}/`);
+export const getMessage = async (
+  identifier: string | number
+): Promise<Message> => {
+  if (typeof identifier === "number") {
+    return await getData<Message>(
+      `http://localhost:8000/api/messages/${identifier}/`
+    );
+  }
+  return await getData<Message>(identifier);
+};
+
+export const getMessagesOfUser = async (
+  userID: number
+): Promise<PagedResponse<Message>> => {
+  return await getData<PagedResponse<Message>>(
+    `http://localhost:8000/api/messages/?user=${userID}`
+  );
 };
 
 export const obtainTokens = async (

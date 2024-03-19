@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import {
   Box,
   Button,
@@ -14,168 +15,119 @@ import {
   Spacer,
 } from "@chakra-ui/react";
 import { ChatIcon, CloseIcon, StarIcon } from "@chakra-ui/icons";
-import { useFetcher, Link as RouterLink } from "react-router-dom";
-import { useRef, useCallback, forwardRef } from "react";
-import type Message from "../api/types/message";
-import useUser from "../hooks/use-user";
+import { Link as RouterLink } from "react-router-dom";
+import withMessage, { type WithMessageProps } from "./with-message";
 
-export type PostProps = {
-  message: Message;
-};
-
-const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
-  const fetcher = useFetcher();
-
-  let favorited = message.favorited;
-
-  // if the request is sent, update the UI immediately
-  // and later update it again if needed
-  if (fetcher.formData !== undefined) {
-    favorited = fetcher.formData.get("favorited") === "false";
-  }
-
-  const ownerID =
-    message.owner === null
-      ? null
-      : +message.owner.slice(0, -1).split("/").slice(-1);
-  const {
-    isLoading: isUserLoading,
-    isError: isUserError,
-    error: userError,
-    data: owner,
-  } = useUser(ownerID);
-
-  const favoriteButtonRef = useRef<HTMLButtonElement>(null);
-
-  const onFavoriteClick = useCallback((): void => {
-    favoriteButtonRef.current?.blur();
-  }, [favoriteButtonRef]);
-
-  if (isUserLoading) {
-    return <div>Loading...</div>;
-  }
-  if (isUserError) {
-    throw userError;
-  }
-
-  let postTime: string;
-  message.time_created = new Date(message.time_created);
-  const minutesAgo =
-    (Date.now() - message.time_created.getTime()) / (60 * 1000);
-  if (minutesAgo < 1) {
-    postTime = "now";
-  } else if (minutesAgo < 60) {
-    postTime = `${Math.floor(minutesAgo)}m`;
-  } else {
-    const hoursAgo = minutesAgo / 60;
-    if (hoursAgo < 24) {
-      postTime = `${Math.floor(hoursAgo)}h`;
-    } else {
-      const currentYear = new Date().getFullYear();
-      const postYear = message.time_created.getFullYear();
-      const postDate = message.time_created
-        .toDateString()
-        .split(" ")
-        .slice(1, 3)
-        .join(" ");
-      postTime =
-        postYear === currentYear ? postDate : `${postDate}, ${postYear}`;
-    }
-  }
-
-  return (
-    <Card ref={ref} as="div" bgColor="gray.800" color="white">
-      <CardHeader px={8}>
-        <HStack>
-          <Heading fontWeight={400} fontSize="lg" color="gray.500">
+const PostRender = forwardRef<HTMLDivElement, WithMessageProps>(
+  (
+    {
+      fetcher,
+      favorited,
+      favoriteButtonRef,
+      onFavoriteClick,
+      messageID,
+      messageTime,
+      ownerName,
+      text,
+    },
+    ref
+  ) => {
+    return (
+      <Card ref={ref} as="div" bgColor="gray.800" color="white">
+        <CardHeader px={8}>
+          <HStack>
+            <Heading fontWeight={400} fontSize="lg" color="gray.500">
+              <Link
+                as={RouterLink}
+                to={`/user/${ownerName}`}
+                borderRadius="sm"
+                p={2}
+                _hover={{ color: "teal.400" }}
+                _focus={{ color: "teal.400" }}
+              >
+                {ownerName}
+              </Link>
+            </Heading>
+            <Spacer />
+            <Heading fontWeight={400} fontSize="md" color="gray.500">
+              {messageTime}
+            </Heading>
+          </HStack>
+        </CardHeader>
+        <CardBody px={10}>
+          <Text fontWeight={400} fontSize="md" color="gray.300">
+            {text}
+          </Text>
+        </CardBody>
+        <CardFooter flexDirection="column" py={1}>
+          <Box borderBottom="1px" borderColor="gray.600" />
+          <Flex justifyContent="space-around" mt={1}>
+            <fetcher.Form method="post">
+              <Button
+                ref={favoriteButtonRef}
+                onClick={onFavoriteClick}
+                type="submit"
+                name="intent"
+                value="favorite"
+                fontWeight={400}
+                color="white"
+                bgColor="gray.800"
+                height="100%"
+                borderRadius="md"
+                _hover={{ bgColor: "gray.700" }}
+                _focus={{ bgColor: "gray.700" }}
+              >
+                <HStack justifyContent="space-between">
+                  {favorited ? (
+                    <>
+                      <CloseIcon mb={1} boxSize={3} />
+                      <Text display={{ base: "none", md: "initial" }}>
+                        Unfavorite
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <StarIcon mb={1.5} />
+                      <Text display={{ base: "none", md: "initial" }}>
+                        Favorite
+                      </Text>
+                    </>
+                  )}
+                </HStack>
+              </Button>
+              <Input
+                type="hidden"
+                name="favorited"
+                value={favorited ? "true" : "false"}
+                readOnly
+              />
+              <Input type="hidden" name="id" value={messageID} readOnly />
+            </fetcher.Form>
             <Link
               as={RouterLink}
-              to={`/user/${owner.username}`}
-              borderRadius="sm"
-              p={2}
-              _hover={{ color: "teal.400" }}
-              _focus={{ color: "teal.400" }}
-            >
-              {owner.username}
-            </Link>
-          </Heading>
-          <Spacer />
-          <Heading fontWeight={400} fontSize="md" color="gray.500">
-            {postTime}
-          </Heading>
-        </HStack>
-      </CardHeader>
-      <CardBody px={10}>
-        <Text fontWeight={400} fontSize="md" color="gray.300">
-          {message.text}
-        </Text>
-      </CardBody>
-      <CardFooter flexDirection="column" py={1}>
-        <Box borderBottom="1px" borderColor="gray.600" />
-        <Flex justifyContent="space-around" mt={1}>
-          <fetcher.Form method="post">
-            <Button
-              ref={favoriteButtonRef}
-              onClick={onFavoriteClick}
-              type="submit"
-              name="intent"
-              value="favorite"
+              to={`/message/${messageID}`}
               fontWeight={400}
               color="white"
               bgColor="gray.800"
-              height="100%"
+              p={4}
               borderRadius="md"
               _hover={{ bgColor: "gray.700" }}
               _focus={{ bgColor: "gray.700" }}
             >
               <HStack justifyContent="space-between">
-                {favorited ? (
-                  <>
-                    <CloseIcon mb={1} boxSize={3} />
-                    <Text display={{ base: "none", md: "initial" }}>
-                      Unfavorite
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <StarIcon mb={1.5} />
-                    <Text display={{ base: "none", md: "initial" }}>
-                      Favorite
-                    </Text>
-                  </>
-                )}
+                <ChatIcon mb={0.5} />
+                <Text display={{ base: "none", md: "initial" }}>Comments</Text>
               </HStack>
-            </Button>
-            <Input
-              type="hidden"
-              name="favorited"
-              value={favorited ? "true" : "false"}
-              readOnly
-            />
-            <Input type="hidden" name="id" value={message.id} readOnly />
-          </fetcher.Form>
-          <Link
-            as={RouterLink}
-            to={`/message/${message.id}`}
-            fontWeight={400}
-            color="white"
-            bgColor="gray.800"
-            p={4}
-            borderRadius="md"
-            _hover={{ bgColor: "gray.700" }}
-            _focus={{ bgColor: "gray.700" }}
-          >
-            <HStack justifyContent="space-between">
-              <ChatIcon mb={0.5} />
-              <Text display={{ base: "none", md: "initial" }}>Comments</Text>
-            </HStack>
-          </Link>
-        </Flex>
-      </CardFooter>
-    </Card>
-  );
-});
+            </Link>
+          </Flex>
+        </CardFooter>
+      </Card>
+    );
+  }
+);
 
-Post.displayName = "Post";
+PostRender.displayName = "PostRender";
+
+const Post = withMessage(PostRender, "Post");
 
 export default Post;

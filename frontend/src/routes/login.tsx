@@ -1,10 +1,12 @@
+import { useContext } from "react";
 import {
   type ActionFunction,
   Form,
+  Navigate,
   redirect,
   useActionData,
 } from "react-router-dom";
-import { type AuthContextData } from "../contexts/auth-context";
+import authContext, { type AuthContextData } from "../contexts/auth-context";
 import { isString } from "../utils";
 
 type LoginErrors = {
@@ -39,7 +41,12 @@ export const actionFactory =
   };
 
 const Login: React.FC = () => {
+  const user = useContext<AuthContextData>(authContext).getUser();
   const errors = useActionData() as LoginErrors | null;
+
+  if (user !== null) {
+    return <Navigate to="/home" />;
+  }
 
   return (
     <Form method="post" id="login-form">

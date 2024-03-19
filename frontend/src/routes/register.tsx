@@ -1,10 +1,13 @@
+import { useContext } from "react";
 import {
   type ActionFunction,
   Form,
+  Navigate,
   redirect,
   useActionData,
 } from "react-router-dom";
 import { register } from "../api/api";
+import authContext, { type AuthContextData } from "../contexts/auth-context";
 import { isString, isEmail } from "../utils";
 
 type RegisterErrors = {
@@ -49,7 +52,12 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 const Register: React.FC = () => {
+  const user = useContext<AuthContextData>(authContext).getUser();
   const errors = useActionData() as RegisterErrors | null;
+
+  if (user !== null) {
+    return <Navigate to="/home" />;
+  }
 
   return (
     <Form method="post" id="register-form">

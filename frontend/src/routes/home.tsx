@@ -1,10 +1,5 @@
 import { useRef, useCallback, useContext } from "react";
-import {
-  type ActionFunction,
-  redirect,
-  useLoaderData,
-  useNavigate,
-} from "react-router-dom";
+import { type ActionFunction, redirect, useLoaderData } from "react-router-dom";
 import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { Flex } from "@chakra-ui/react";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
@@ -65,8 +60,6 @@ export const actionFactory =
 
 const Home: React.FC = () => {
   const user = useContext<AuthContextData>(authContext).getUser();
-
-  const navigate = useNavigate();
 
   const initialData = useLoaderData() as Awaited<
     ReturnType<ReturnType<typeof loaderFactory>>

@@ -67,11 +67,11 @@ class MessageList(generics.ListCreateAPIView):
                 )
             )
         )
-        username = self.request.query_params.get("user")
+        user_id = self.request.query_params.get("user")
         parent = self.request.query_params.get("parent")
         posts = self.request.query_params.get("posts")
-        if username is not None:
-            queryset = queryset.filter(owner__username=username)
+        if user_id is not None:
+            queryset = queryset.filter(owner__id=int(user_id))
         if parent is not None:
             queryset = queryset.filter(parent__id=parent)
         if posts is not None:

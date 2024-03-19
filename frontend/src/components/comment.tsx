@@ -17,16 +17,19 @@ import { Link as RouterLink } from "react-router-dom";
 import withMessage, { type WithMessageProps } from "./with-message";
 
 const CommentRender = forwardRef<HTMLDivElement, WithMessageProps>(
-  ({
-    fetcher,
-    favorited,
-    favoriteButtonRef,
-    onFavoriteClick,
-    messageID,
-    messageTime,
-    ownerName,
-    text,
-  }) => {
+  (
+    {
+      fetcher,
+      favorited,
+      favoriteButtonRef,
+      onFavoriteClick,
+      messageID,
+      messageTime,
+      ownerName,
+      text,
+    },
+    _
+  ) => {
     return (
       <Card as="div" bgColor="gray.900" color="white" width="80%">
         <CardHeader px={6} pb={2}>

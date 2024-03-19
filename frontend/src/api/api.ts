@@ -1,8 +1,7 @@
 import axios, { isAxiosError } from "axios";
 import type Result from "./types/result";
-import type PagedResponse from "./types/paged-response";
-import type Message from "./types/message";
 import type User from "./types/user";
+import type Message from "./types/message";
 import { isTokens, type TokenPair } from "./types/tokens";
 import type RegisterResponse from "./types/register-response";
 import {
@@ -19,7 +18,6 @@ import {
 } from "../constants";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api/",
   timeout: 5000,
 });
 
@@ -33,12 +31,14 @@ API.interceptors.request.use(
   },
   (error) => {
     console.log(error);
+    // maybe add some logging here
     throw error;
   }
 );
 
 API.interceptors.response.use(
   (response) => response,
+  // maybe add some logging here
   async (error) => {
     console.log(error);
     if (error.config === undefined) {
@@ -79,48 +79,27 @@ API.interceptors.response.use(
   }
 );
 
+export const getData = async <T>(url: string): Promise<T> => {
+  const response = await API.get(url);
+  const data = response.data as T;
+  return data;
+};
+
+export const getUser = async (id: number | null): Promise<User> => {
+  if (id === null) {
+    return {
+      id: 0,
+      url: "Deleted",
+      username: "Deleted",
+      favorites: [],
+      messages: [],
+    };
+  }
+  return await getData<User>(`http://localhost:8000/api/users/${id}/`);
+};
+
 export const getMessage = async (id: number): Promise<Message> => {
-  const response = await API.get(`messages/${id}/`);
-  const message = response.data as Message;
-  message.created = new Date(message.created);
-  return message;
-};
-
-export const getMessages = async (page = 1): Promise<Message[]> => {
-  const response = await API.get(`messages/?page=${page}`);
-  const messages = (response.data as PagedResponse<Message>).results;
-  for (const message of messages) {
-    message.created = new Date(message.created);
-  }
-  return messages;
-};
-
-export const getPosts = async (page = 1): Promise<Message[]> => {
-  const response = await API.get(`messages/?page=${page}&posts=true`);
-  const posts = (response.data as PagedResponse<Message>).results;
-  for (const post of posts) {
-    post.created = new Date(post.created);
-  }
-  return posts;
-};
-
-export const getComments = async (page = 1): Promise<Message[]> => {
-  const response = await API.get(`messages/?page=${page}&posts=false`);
-  const comments = (response.data as PagedResponse<Message>).results;
-  for (const comment of comments) {
-    comment.created = new Date(comment.created);
-  }
-  return comments;
-};
-
-export const getUser = async (id: number): Promise<User> => {
-  const response = await API.get(`users/${id}/`);
-  return response.data as User;
-};
-
-export const getUsers = async (page = 1): Promise<User[]> => {
-  const response = await API.get(`users/?page=${page}`);
-  return (response.data as PagedResponse<User>).results;
+  return await getData<Message>(`http://localhost:8000/api/messages/${id}/`);
 };
 
 export const obtainTokens = async (
@@ -128,7 +107,7 @@ export const obtainTokens = async (
   password: string
 ): Promise<Result<TokenPair, ObtainTokenError>> => {
   try {
-    const response = await API.post("token/", {
+    const response = await API.post("http://localhost:8000/api/token/", {
       username,
       password,
     });
@@ -151,7 +130,10 @@ export const refreshTokens = async (
   refresh: string
 ): Promise<Result<TokenPair, RefreshTokenError>> => {
   try {
-    const response = await API.post("token/refresh/", { refresh });
+    const response = await API.post(
+      "http://localhost:8000/api/token/refresh/",
+      { refresh }
+    );
     if (!isTokens(response.data)) {
       throw new Error("Bad API Response");
     }
@@ -174,7 +156,7 @@ export const register = async (
   passwordRepeat: string
 ): Promise<Result<RegisterResponse, RegisterError>> => {
   try {
-    const response = await API.post("register/", {
+    const response = await API.post("http://localhost:8000/api/register/", {
       username,
       email,
       password,
@@ -197,7 +179,10 @@ export const favorite = async (
   messageID: number
 ): Promise<Result<undefined, FavoriteError>> => {
   try {
-    return await API.post(`messages/${messageID}/favorite/`, {});
+    return await API.post(
+      `http://localhost:8000/api/messages/${messageID}/favorite/`,
+      {}
+    );
   } catch (error) {
     if (
       isAxiosError<FavoriteError>(error) &&
@@ -213,7 +198,9 @@ export const unfavorite = async (
   messageID: number
 ): Promise<Result<undefined, FavoriteError>> => {
   try {
-    return await API.delete(`messages/${messageID}/favorite/`);
+    return await API.delete(
+      `http://localhost:8000/api/messages/${messageID}/favorite/`
+    );
   } catch (error) {
     if (
       isAxiosError<FavoriteError>(error) &&

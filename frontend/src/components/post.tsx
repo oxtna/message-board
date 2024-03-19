@@ -34,7 +34,10 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
     favorited = fetcher.formData.get("favorited") === "false";
   }
 
-  const ownerID = +message.owner.slice(0, -1).split("/").slice(-1);
+  const ownerID =
+    message.owner === null
+      ? null
+      : +message.owner.slice(0, -1).split("/").slice(-1);
   const {
     isLoading: isUserLoading,
     isError: isUserError,
@@ -56,7 +59,9 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
   }
 
   let postTime: string;
-  const minutesAgo = (Date.now() - message.created.getTime()) / (60 * 1000);
+  message.time_created = new Date(message.time_created);
+  const minutesAgo =
+    (Date.now() - message.time_created.getTime()) / (60 * 1000);
   if (minutesAgo < 1) {
     postTime = "now";
   } else if (minutesAgo < 60) {
@@ -67,8 +72,8 @@ const Post = forwardRef<HTMLDivElement, PostProps>(({ message }, ref) => {
       postTime = `${Math.floor(hoursAgo)}h`;
     } else {
       const currentYear = new Date().getFullYear();
-      const postYear = message.created.getFullYear();
-      const postDate = message.created
+      const postYear = message.time_created.getFullYear();
+      const postDate = message.time_created
         .toDateString()
         .split(" ")
         .slice(1, 3)

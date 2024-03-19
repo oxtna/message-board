@@ -9,10 +9,11 @@ import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { Flex } from "@chakra-ui/react";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
 import Post from "../components/post";
-import { getPosts } from "../api/api";
+import { getData } from "../api/api";
 import type Message from "../api/types/message";
 import { isAxiosError } from "axios";
 import { favoriteActionFactory } from "../actions";
+import type PagedResponse from "../api/types/paged-response";
 
 // adding `LoaderFunction` return type causes type mismatches here
 export const loaderFactory =
@@ -20,9 +21,13 @@ export const loaderFactory =
     const user = authContext.getUser();
     return await queryClient.fetchInfiniteQuery({
       queryKey: ["messages", user?.username],
-      queryFn: async ({ pageParam = 1 }) => {
+      queryFn: async ({ pageParam = "" }) => {
+        pageParam =
+          pageParam === ""
+            ? "http://localhost:8000/api/messages/?posts=true"
+            : pageParam;
         try {
-          return await getPosts(pageParam);
+          return await getData<PagedResponse<Message>>(pageParam);
         } catch (error) {
           if (isAxiosError(error) && error.response?.status === 403) {
             return redirect("/home");
@@ -30,14 +35,14 @@ export const loaderFactory =
           throw error;
         }
       },
-      getNextPageParam: (lastPage, allPages) => {
+      getNextPageParam: (lastPage, _) => {
         if (lastPage instanceof Response) {
           return undefined;
         }
-        if (lastPage.length === 0) {
+        if (lastPage.next === null) {
           return undefined;
         }
-        return allPages.length + 1;
+        return lastPage.next;
       },
       staleTime: 30 * 1000,
     });
@@ -76,27 +81,29 @@ const Home: React.FC = () => {
     data,
   } = useInfiniteQuery(
     ["messages", user?.username],
-    async ({ pageParam = 1 }) => {
+    async ({ pageParam = "" }) => {
+      pageParam =
+        pageParam === ""
+          ? "http://localhost:8000/api/messages/?posts=true"
+          : pageParam;
       try {
-        const posts = await getPosts(pageParam);
-        return posts;
+        return await getData<PagedResponse<Message>>(pageParam);
       } catch (error) {
         if (isAxiosError(error) && error.response?.status === 403) {
-          navigate("/home");
-          return [];
+          return redirect("/home");
         }
         throw error;
       }
     },
     {
-      getNextPageParam: (lastPage, allPages) => {
+      getNextPageParam: (lastPage, _) => {
         if (lastPage instanceof Response) {
           return undefined;
         }
-        if (lastPage.length === 0) {
+        if (lastPage.next === null) {
           return undefined;
         }
-        return allPages.length + 1;
+        return lastPage.next;
       },
       initialData,
     }
@@ -131,8 +138,11 @@ const Home: React.FC = () => {
   }
 
   const messages = data?.pages
-    .flat(1)
-    .filter((value): value is Message => !(value instanceof Response));
+    .filter(
+      (value): value is PagedResponse<Message> => !(value instanceof Response)
+    )
+    .map((pagedMessages) => pagedMessages.results)
+    .flat(1);
 
   const posts = messages?.map((message, i) => {
     if (i + 1 === messages.length) {

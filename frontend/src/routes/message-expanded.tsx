@@ -6,8 +6,8 @@ import {
   useParams,
   useLoaderData,
   redirect,
-  Navigate,
   Form,
+  useNavigate,
 } from "react-router-dom";
 import { type QueryClient, useQuery, useQueries } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -24,7 +24,7 @@ export const loaderFactory =
       throw new Error("Message not found");
     }
     const id = +params.messageID;
-    const user = authContext.getUser();
+    const user = authContext.user;
 
     return await queryClient.ensureQueryData({
       queryKey: ["messages", id, user],
@@ -67,7 +67,9 @@ const MessageExpanded: React.FC = () => {
 
   const id = +params.messageID;
 
-  const user = useContext(authContext).getUser();
+  const user = useContext(authContext).user;
+
+  const navigate = useNavigate();
 
   const initialData = useLoaderData() as Awaited<
     ReturnType<ReturnType<typeof loaderFactory>>
@@ -121,7 +123,8 @@ const MessageExpanded: React.FC = () => {
   }
 
   if (data instanceof Response) {
-    return <Navigate to={data.url} />;
+    navigate(data.url, { replace: true });
+    return;
   }
 
   return (

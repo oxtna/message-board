@@ -37,7 +37,7 @@ const App: React.FC = () => {
       element: <Root />,
       errorElement: <ErrorPage />,
       children: [
-        { index: true, element: <Navigate to="/home" /> },
+        { index: true, element: <Navigate replace to="/home" /> },
         {
           path: "login",
           action: loginActionFactory(auth),

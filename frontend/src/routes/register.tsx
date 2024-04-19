@@ -2,9 +2,9 @@ import { useContext } from "react";
 import {
   type ActionFunction,
   Form,
-  Navigate,
   redirect,
   useActionData,
+  useNavigate,
 } from "react-router-dom";
 import { register } from "../api/api";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
@@ -52,11 +52,13 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 const Register: React.FC = () => {
-  const user = useContext<AuthContextData>(authContext).getUser();
+  const user = useContext<AuthContextData>(authContext).user;
   const errors = useActionData() as RegisterErrors | null;
+  const navigate = useNavigate();
 
   if (user !== null) {
-    return <Navigate to="/home" />;
+    navigate("/home", { replace: true });
+    return;
   }
 
   return (

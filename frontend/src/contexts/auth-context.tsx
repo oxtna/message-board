@@ -1,4 +1,4 @@
-import { createContext, useEffect, useCallback } from "react";
+import { createContext, useEffect, useCallback, useState } from "react";
 import jwt_decode from "jwt-decode";
 import {
   LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
@@ -9,8 +9,8 @@ import {
 import { type Token } from "../api/types/tokens";
 import { obtainTokens } from "../api/api";
 
-type GetAuthUserFunction = () => AuthUser | null;
 type LoginFunction = (username: string, password: string) => Promise<boolean>;
+type LogoutFunction = () => void;
 
 export type AuthUser = {
   userID: number;
@@ -18,13 +18,16 @@ export type AuthUser = {
 };
 
 export type AuthContextData = {
-  getUser: GetAuthUserFunction;
+  user: AuthUser | null;
   loginUser: LoginFunction;
+  logoutUser: LogoutFunction;
 };
 
 const authContext = createContext<AuthContextData>({
-  getUser: () => null,
+  user: null,
   loginUser: async (_, __) => false,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  logoutUser: () => {},
 });
 
 type AuthProviderProps = {
@@ -34,14 +37,14 @@ type AuthProviderProps = {
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
 }: AuthProviderProps) => {
-  const getUser: GetAuthUserFunction = useCallback(() => {
+  const [user, setUser] = useState<AuthUser | null>(() => {
     const userID = localStorage.getItem(LOCAL_STORAGE_USER_ID_IDENTIFIER);
     const username = localStorage.getItem(LOCAL_STORAGE_USERNAME_IDENTIFIER);
     if (userID === null || username === null) {
       return null;
     }
     return { username, userID: +userID };
-  }, []);
+  });
 
   const loginUser: LoginFunction = useCallback(
     async (username, password) => {
@@ -74,10 +77,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER,
         result.data.access
       );
+      setUser({ username: decoded.username, userID: decoded.user_id });
       return true;
     },
-    [obtainTokens]
+    [obtainTokens, setUser]
   );
+
+  const logoutUser: LogoutFunction = useCallback(() => {
+    localStorage.removeItem(LOCAL_STORAGE_USERNAME_IDENTIFIER);
+    localStorage.removeItem(LOCAL_STORAGE_USER_ID_IDENTIFIER);
+    localStorage.removeItem(LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER);
+    localStorage.removeItem(LOCAL_STORAGE_REFRESH_TOKEN_IDENTIFIER);
+    setUser(null);
+  }, [setUser]);
 
   useEffect(() => {
     const token = localStorage.getItem(LOCAL_STORAGE_ACCESS_TOKEN_IDENTIFIER);
@@ -91,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   }, []);
 
-  const value: AuthContextData = { getUser, loginUser };
+  const value: AuthContextData = { user, loginUser, logoutUser };
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
 };

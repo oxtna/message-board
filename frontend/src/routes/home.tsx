@@ -13,7 +13,7 @@ import type PagedResponse from "../api/types/paged-response";
 // adding `LoaderFunction` return type causes type mismatches here
 export const loaderFactory =
   (queryClient: QueryClient, authContext: AuthContextData) => async () => {
-    const user = authContext.getUser();
+    const user = authContext.user;
     return await queryClient.fetchInfiniteQuery({
       queryKey: ["messages", user?.username],
       queryFn: async ({ pageParam = "" }) => {
@@ -59,7 +59,7 @@ export const actionFactory =
   };
 
 const Home: React.FC = () => {
-  const user = useContext<AuthContextData>(authContext).getUser();
+  const user = useContext<AuthContextData>(authContext).user;
 
   const initialData = useLoaderData() as Awaited<
     ReturnType<ReturnType<typeof loaderFactory>>

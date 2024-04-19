@@ -1,13 +1,16 @@
 import { useContext, useEffect, useState } from "react";
-import { Stack, Spacer, Box } from "@chakra-ui/react";
+import { Stack, Spacer, Box, Button } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import NavbarLink from "./navbar-link";
 import authContext from "../contexts/auth-context";
+import { useNavigate } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const [borderOpacity, setBorderOpacity] = useState<number>(0);
+  const user = useContext(authContext).user;
+  const navigate = useNavigate();
 
-  const user = useContext(authContext).getUser();
+  const logoutUser = useContext(authContext).logoutUser;
 
   useEffect(() => {
     const handleScroll = (): void => {
@@ -58,6 +61,18 @@ const Navbar: React.FC = () => {
         )}
         {user !== null && (
           <NavbarLink to="/profile">{user.username}</NavbarLink>
+        )}
+        {user !== null && (
+          <Button
+            onClick={() => {
+              logoutUser();
+              navigate("/login");
+            }}
+            color="white"
+            bgColor="blackAlpha.300"
+          >
+            Log out
+          </Button>
         )}
       </Stack>
       <Box

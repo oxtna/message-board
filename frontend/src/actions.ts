@@ -7,7 +7,7 @@ import { isString } from "./utils";
 export const favoriteActionFactory =
   (queryClient: QueryClient, authContext: AuthContextData) =>
   async (formData: FormData) => {
-    const user = authContext.getUser();
+    const user = authContext.user;
     if (user === null) {
       return redirect("/login");
     }

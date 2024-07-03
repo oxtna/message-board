@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import {
   type ActionFunction,
   Form,
@@ -6,12 +6,20 @@ import {
   useActionData,
   useNavigate,
 } from "react-router-dom";
+import {
+  Alert,
+  Button,
+  Input,
+  InputGroup,
+  InputRightElement,
+  VStack,
+} from "@chakra-ui/react";
 import authContext, { type AuthContextData } from "../contexts/auth-context";
 import { isString } from "../utils";
 
 type LoginErrors = {
-  username?: string;
-  password?: string;
+  detail: string;
+  reason: "password" | "username" | "credentials";
 };
 
 export const actionFactory =
@@ -25,16 +33,16 @@ export const actionFactory =
     const formData = await request.formData();
     const username = formData.get("username")?.valueOf();
     const password = formData.get("password")?.valueOf();
-    if (!isString(username)) {
-      return { username: "Invalid username" };
+    if (!isString(username) || username === "") {
+      return { detail: "Invalid username", reason: "username" };
     }
-    if (!isString(password)) {
-      return { password: "Invalid password" };
+    if (!isString(password) || password === "") {
+      return { detail: "Invalid password", reason: "password" };
     }
 
     const loggedIn = await loginUser(username, password);
     if (!loggedIn) {
-      return { password: "Wrong password" };
+      return { detail: "Wrong credentials", reason: "credentials" };
     }
 
     return redirect("/home");
@@ -43,26 +51,75 @@ export const actionFactory =
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const user = useContext<AuthContextData>(authContext).user;
-  const errors = useActionData() as LoginErrors | null;
+  const errors = useActionData() as LoginErrors | undefined;
+  const [show, setShow] = useState(false);
 
   if (user !== null) {
     navigate("/home", { replace: true });
     return;
   }
-
+  console.log(errors);
   return (
-    <Form method="post" id="login-form">
-      <label>
-        <span>Username</span>
-        {errors?.username !== undefined && <span>{errors.username}</span>}
-        <input aria-label="Username" type="text" name="username" />
-      </label>
-      <label>
-        <span>Password</span>
-        {errors?.password !== undefined && <span>{errors.password}</span>}
-        <input aria-label="Password" type="password" name="password" />
-      </label>
-      <button type="submit">Login</button>
+    <Form method="post" id="login-form" replace>
+      <VStack spacing={5}>
+        {errors !== undefined ? (
+          <Alert status="error" variant="left-accent">
+            {errors.detail}
+          </Alert>
+        ) : (
+          <></>
+        )}
+        <Input
+          aria-label="Username"
+          type="text"
+          name="username"
+          placeholder="Username"
+          required
+          isInvalid={
+            errors?.reason === "username" || errors?.reason === "credentials"
+          }
+          errorBorderColor="crimson"
+          color="white"
+        />
+        <InputGroup size="md">
+          <Input
+            aria-label="Password"
+            type={show ? "text" : "password"}
+            name="password"
+            placeholder="Password"
+            required
+            isInvalid={
+              errors?.reason === "password" || errors?.reason === "credentials"
+            }
+            errorBorderColor="crimson"
+            color="white"
+          />
+          <InputRightElement width="4.5rem">
+            <Button
+              onClick={() => {
+                setShow(!show);
+              }}
+              h="1.75rem"
+              size="sm"
+              color="gray.300"
+              backgroundColor="gray.700"
+              _hover={{ color: "teal.400" }}
+              _active={{ backgroundColor: "gray.600" }}
+            >
+              {show ? "Hide" : "Show"}
+            </Button>
+          </InputRightElement>
+        </InputGroup>
+        <Button
+          type="submit"
+          color="gray.300"
+          backgroundColor="gray.700"
+          _hover={{ color: "teal.400" }}
+          _active={{ backgroundColor: "gray.600" }}
+        >
+          Login
+        </Button>
+      </VStack>
     </Form>
   );
 };
